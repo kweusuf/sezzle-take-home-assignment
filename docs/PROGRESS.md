@@ -72,31 +72,35 @@ only after its completion criterion has been verified.
 
 ## M5: Documentation
 
-- [ ] README complete: setup, run, test, coverage, API, decisions, limitations.
-- [ ] `docs/API.md` matches implementation exactly (curl examples verified).
-- [ ] `docs/ARCHITECTURE.md` reflects final structure and trade-offs.
-- [ ] `docs/DECISIONS.md` contains significant ADRs.
-- [ ] `docs/TESTING.md` contains executed commands and observed results.
-- [ ] `docs/AI_PROMPTS.md` records substantial prompts and purpose.
-- [ ] `docs/HANDOFF.md` reflects actual current state.
-- [ ] `docs/MILESTONES.md` statuses and evidence updated.
+- [x] README complete: setup, run, test, coverage, API, decisions, limitations.
+- [x] `docs/API.md` matches implementation exactly (curl examples verified).
+- [x] `docs/ARCHITECTURE.md` reflects final structure and trade-offs.
+- [x] `docs/DECISIONS.md` contains significant ADRs.
+- [x] `docs/TESTING.md` contains executed commands and observed results.
+- [x] `docs/AI_PROMPTS.md` records substantial prompts and purpose.
+- [x] `docs/HANDOFF.md` reflects actual current state.
+- [x] `docs/MILESTONES.md` statuses and evidence updated.
+- [x] Committed coverage summary at `docs/coverage-summary.txt`.
 
 ## Git hygiene
 
-- [x] Small, focused commits per milestone (M0–M3 landed; M4/M5 in progress).
+- [x] Small, focused commits per milestone (five commits, one per milestone).
 - [x] Each commit includes its documentation updates.
 - [x] Diff reviewed before commit; no secrets or generated artifacts staged
-      (`node_modules/`, `dist/`, coverage, and binaries are ignored).
+      (`node_modules/`, `dist/`, coverage HTML/out, binaries are ignored).
 - [x] No remote configured; publication commands documented in README.
 
 ## Final verification and submission readiness
 
-- [ ] Backend tests and HTTP tests pass.
-- [ ] Frontend tests, typecheck, and build pass.
-- [ ] Formatting/vet checks pass.
-- [ ] Coverage reports generated.
-- [ ] Smoke test passes.
-- [ ] Git working tree clean.
-- [ ] README commands verified.
-- [ ] Known limitations recorded.
-- [ ] Local-only publication status stated accurately.
+- [x] Backend tests and HTTP tests pass (`go test -count=1 ./...`, also with
+      `-race`).
+- [x] Frontend tests, typecheck, and build pass (20 tests).
+- [x] Formatting/vet checks pass (`gofmt -l` empty, `go vet`, `tsc --noEmit`).
+- [x] Coverage reports generated (`make coverage`; summary committed at
+      `docs/coverage-summary.txt`).
+- [x] Smoke test passes (21 checks, 0 failed, run twice).
+- [x] Git working tree clean.
+- [x] README commands verified (`fmt-check`, `test`, `build`, `coverage`,
+      `smoke`, `run-backend`, `run-frontend`).
+- [x] Known limitations recorded in README and HANDOFF.
+- [x] Local-only publication status stated accurately.

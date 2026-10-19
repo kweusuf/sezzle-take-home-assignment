@@ -129,10 +129,15 @@ A milestone is complete only when its acceptance criteria have been verified.
   - All documented commands were executed successfully or limitations recorded.
   - Known limitations documented; Git tree clean; no secrets/artifacts tracked.
 - **Dependencies:** M4.
-- **Status:** NOT STARTED
-- **Verification commands:** full check list in `docs/TESTING.md`.
-- **Completion evidence:** pending.
-- **Commits:** pending.
+- **Status:** COMPLETE
+- **Verification commands:** the full final set in `docs/TESTING.md`
+  ("Final verification pass").
+- **Completion evidence:** `gofmt -l` empty, `go vet ./...`, `tsc --noEmit`,
+  `go test -count=1 ./...` and `-race`, 20 frontend tests, production build,
+  `make smoke` 21/21, coverage recorded in `docs/coverage-summary.txt` and
+  TESTING.md. Known limitations documented in README and HANDOFF. Working tree
+  clean after the final commit.
+- **Commits:** `docs: finalize project documentation and verification`.
 
 ## Optional (not tracked as required milestones)
 

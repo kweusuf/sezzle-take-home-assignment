@@ -11,14 +11,13 @@ documentation. See [Problem.md](Problem.md) and [Prompt.md](Prompt.md).
 
 ## 2. Current overall status
 
-M4 complete: backend, frontend, and integration checks are green
-(`make fmt-check`, `make test`, `make build`, `make coverage`, `make smoke`).
-Remaining: M5 (final verification pass, final documentation, clean tree).
-Git repository is local-only with no remote.
+**All required milestones (M0–M5) are complete.** Backend, frontend, tests,
+coverage, smoke test, and documentation are done and verified. The repository is
+ready for evaluation and is local-only (no Git remote).
 
 ## 3. Current milestone
 
-M5: Documentation and Submission Readiness (`IN PROGRESS`).
+None — project complete, pending user publication.
 
 ## 4. Completed milestones
 
@@ -29,7 +28,9 @@ M5: Documentation and Submission Readiness (`IN PROGRESS`).
 - M3: React Frontend — typed client, calculator UI, 20 tests, 97.67% statement
   coverage, production build, proxy verified against the live backend.
 - M4: Integration and QA — `scripts/smoke.sh` (21 checks, 0 failures), all Make
-  targets green, coverage recorded in TESTING.md.
+  targets green, coverage recorded.
+- M5: Documentation and Submission Readiness — final verification, committed
+  coverage summary, clean tree.
 
 ## 5. Current implementation state
 
@@ -111,80 +112,39 @@ cd backend && go test -race ./...
 
 ## 12. Most recent successful verification results
 
-M2 (backend API) — executed on 2026-10-19:
+Final verification pass (2026-10-19), all executed with a clean cache where it
+matters:
 
 ```text
-$ cd backend && gofmt -l . && go vet ./...      # no output
-$ cd backend && go test ./... -cover
-ok  calculator-app/backend/internal/api         0.416s  coverage: 94.0% of statements
-ok  calculator-app/backend/internal/calculator  cached  coverage: 97.5% of statements
-ok  calculator-app/backend/internal/config      cached  coverage: 100.0% of statements
-$ cd backend && go build ./...                  # ok
+$ cd backend && gofmt -l . && go vet ./...          # no output
+$ cd backend && go test -count=1 ./... -cover
+ok  internal/api         0.457s  coverage: 94.0% of statements
+ok  internal/calculator  0.450s  coverage: 97.5% of statements
+ok  internal/config      0.448s  coverage: 100.0% of statements
+?   cmd/server           [no test files]
+$ cd backend && go test -count=1 -race ./...        # all ok
+$ cd frontend && npm run typecheck                  # clean
+$ cd frontend && npm test                           # 2 files, 20 tests passed
+$ make fmt-check && make test && make build         # all OK
+$ make smoke                                        # 21 checks, 0 failed
+$ make coverage                                     # Go total 85.4%; frontend 97.67%
 ```
 
-Live server check (`PORT=8099 ./calserver`, curl):
+Details, per-package coverage, and the exact smoke cases:
+[docs/TESTING.md](TESTING.md); generated artifact:
+[docs/coverage-summary.txt](coverage-summary.txt).
 
-```text
-GET  /health                     -> 200 {"status":"ok"}
-POST /api/v1/calculate add       -> 200 {"result":15}
-POST /api/v1/calculate sqrt      -> 200 {"result":5}
-POST /api/v1/calculate divide1/0 -> 400 {"error":{"code":"DIVISION_BY_ZERO",...}}
-GET  /api/v1/calculate           -> 405 {"error":{"code":"METHOD_NOT_ALLOWED",...}}
-GET  /nope                       -> 404 {"error":{"code":"NOT_FOUND",...}}
-```
+### Earlier milestone evidence
 
-`cmd/server` is 0.0% covered by unit tests; it is exercised by the M4 smoke
-test instead.
+M2 live server check (`PORT=8099`): `/health` 200, `add` 200 `{"result":15}`,
+`sqrt` 200 `{"result":5}`, divide-by-zero 400, GET on calculate 405, unknown
+route 404.
 
-### M3 — frontend (executed 2026-10-19)
+M3 dev proxy (backend `:8080`, Vite `:5173`): `GET /` 200 text/html,
+percentage 25/200 → 200 `{"result":12.5}`, sqrt −1 → 400
+`INVALID_OPERAND`.
 
-```text
-$ cd frontend && npm run typecheck    # clean
-$ cd frontend && npm test
-Test Files  2 passed (2)
-     Tests  20 passed (20)
-$ cd frontend && npm run build
-dist/assets/index-*.css  2.23 kB │ gzip: 0.88 kB
-dist/assets/index-*.js 224.26 kB │ gzip: 70.31 kB
-✓ built in 297ms
-$ cd frontend && npm run test:coverage
-Statements 97.67% (84/86) | Branches 94.52% (69/73) | Functions 94.11% (16/17) | Lines 97.64% (83/85)
-```
-
-Dev-proxy integration (backend on `:8080`, Vite on `:5173`):
-
-```text
-GET  http://localhost:5173/                     -> 200 text/html
-POST http://localhost:5173/api/v1/calculate     -> 200 {"result":12.5}   (percentage 25, 200)
-POST http://localhost:5173/api/v1/calculate     -> 400 {"error":{"code":"INVALID_OPERAND",...}}  (sqrt -1)
-```
-
-### M4 — integration and full check set (executed 2026-10-19)
-
-```text
-$ make fmt-check      # gofmt clean, go vet clean, tsc --noEmit clean
-$ make test           # Go: ok for 3 packages; frontend: 2 files, 20 tests passed
-$ make build          # go build ok; vite build → dist 224.26 kB js (gzip 70.31 kB)
-$ make coverage       # Go total 85.4%; frontend 97.67% stmts
-$ make smoke
-Building backend...
-Smoke testing http://127.0.0.1:8099
-21 checks, 0 failed
-```
-
-Coverage detail:
-
-| Scope | Coverage | Note |
-| --- | --- | --- |
-| `internal/api` | 94.0% stmts | |
-| `internal/calculator` | 97.5% stmts | unreachable final return in `binary` |
-| `internal/config` | 100.0% stmts | |
-| `cmd/server` | 0.0% stmts | thin entry point, exercised by `make smoke` |
-| Go total (`./...`) | 85.4% stmts | includes `cmd/server` |
-| frontend total | 97.67% stmts / 94.52% branches | `src/api/client.ts` is 100% (hidden by the reporter's `skipFull`) |
-
-The Vitest `text` reporter hides files at 100% coverage; use
-`frontend/coverage/index.html` for the per-file view.
+`cmd/server` is 0.0% covered by unit tests; the smoke test exercises it.
 
 ## 13. Known defects and limitations
 
@@ -195,11 +155,18 @@ The Vitest `text` reporter hides files at 100% coverage; use
   limitation, not a defect).
 - Result formatting is `String(value)`; very large or very small magnitudes are
   shown in exponential notation.
+- No authentication, rate limiting, or persistence (not requested).
+- No Docker/Compose files (optional in the assignment; deliberately skipped).
+- The `handleCalculate` 500 branch for a non-`*calculator.Error` domain failure
+  is defensive and cannot be triggered through the public API.
+- Operation identifiers are duplicated in Go and TypeScript; no automated
+  contract test keeps them in sync (the smoke test would catch drift for the
+  operations it exercises).
 
 ## 14. Outstanding tasks
 
-M5 only: final verification pass, README/docs final state, clean working tree.
-See [PROGRESS.md](PROGRESS.md) for the per-task checklist.
+None for the required scope. Optional ideas: Docker support, a browser-level
+E2E test, and a generated/shared operation contract.
 
 ## 15. Blockers and their causes
 
@@ -226,15 +193,18 @@ Branch `main`, no remote. History:
 - `feat: implement calculator operations and unit tests` (M1)
 - `feat: add calculator REST API and HTTP tests` (M2)
 - `test: add integration smoke test and record coverage` (M4)
-- M5 commit pending.
+- `docs: finalize project documentation and verification` (M5)
 
 ## 18. Immediate next steps
 
-1. Run the final verification set and re-check API examples against the
-   implementation.
-2. Confirm no secrets, artifacts, or unrelated files are tracked.
-3. Finalize README, PROGRESS, MILESTONES, TESTING, and this document; commit M5
-   and confirm a clean working tree.
+Nothing is required. To publish, the user must choose a remote:
+
+```bash
+git remote add origin <repository-url>
+git push -u origin main
+```
+
+Optional follow-ups are listed in section 14.
 
 ## 19. Approval decisions already made
 
@@ -247,6 +217,6 @@ Branch `main`, no remote. History:
 
 ## 20. Decisions that still require approval
 
-- Any change to the M0 architecture (e.g. adding a framework or a database).
-- Adding Docker or other infrastructure beyond the documented scope.
 - Configuring a Git remote or publishing the repository.
+- Any change to the agreed architecture (e.g. adding a framework, database, or
+  Docker infrastructure) beyond the documented scope.

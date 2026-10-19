@@ -167,6 +167,38 @@ The Vitest `text` reporter hides files at 100% coverage, which is why
 `src/api/client.ts` does not appear in the console table; it is present in
 `frontend/coverage/index.html` at 100%.
 
+## Final verification pass
+
+Executed on 2026-10-19 after all documentation and code changes:
+
+```text
+$ cd backend && gofmt -l .                  # no output
+$ cd backend && go vet ./...                # no output
+$ cd backend && go test -count=1 ./... -cover
+ok  internal/api         0.457s  coverage: 94.0% of statements
+ok  internal/calculator  0.450s  coverage: 97.5% of statements
+ok  internal/config      0.448s  coverage: 100.0% of statements
+?   cmd/server           [no test files]
+$ cd backend && go test -count=1 -race ./...    # all ok
+$ cd frontend && npm run typecheck              # clean
+$ cd frontend && npm test                       # 2 files, 20 tests passed
+$ make fmt-check                                # OK
+$ make test                                     # OK
+$ make build                                    # OK (dist 224.26 kB js, gzip 70.31 kB)
+$ make smoke                                    # 21 checks, 0 failed
+$ make coverage                                 # Go total 85.4%; frontend 97.67%
+```
+
+A committed text snapshot of the coverage output is at
+[coverage-summary.txt](coverage-summary.txt). Regenerate it with `make
+coverage` and, if desired, copy the output; HTML reports stay local at
+`backend/coverage.html` and `frontend/coverage/index.html`.
+
+Uncovered areas are deliberate: the unreachable final return in
+`calculator.binary`, the defensive non-`*calculator.Error` 500 branch in
+`handleCalculate`, the `main` entry point (smoke-tested), `App.tsx` (rendered
+only by `main.tsx`), and the fallback branch in `operationOption`.
+
 ## Environment limitations (current)
 
 - Docker is installed but Docker support is optional and is not planned for the

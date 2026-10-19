@@ -1,0 +1,61 @@
+Coverage summary — generated 2026-10-19 19:59:59 IST
+Commands: cd backend && go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out
+          cd frontend && npm run test:coverage
+
+=== Go (per function) ===
+calculator-app/backend/cmd/server/main.go:18:			main			0.0%
+calculator-app/backend/internal/api/api.go:34:			NewHandler		100.0%
+calculator-app/backend/internal/api/api.go:67:			handleCalculate		87.5%
+calculator-app/backend/internal/api/api.go:105:			handleHealth		100.0%
+calculator-app/backend/internal/api/api.go:114:			handleNotFound		100.0%
+calculator-app/backend/internal/api/api.go:120:			decodeRequest		93.3%
+calculator-app/backend/internal/api/api.go:158:			isTooLarge		100.0%
+calculator-app/backend/internal/api/api.go:163:			tooLargeSpec		100.0%
+calculator-app/backend/internal/api/api.go:172:			jsonDecodeMessage	100.0%
+calculator-app/backend/internal/api/api.go:186:			writeJSON		100.0%
+calculator-app/backend/internal/api/api.go:192:			writeError		100.0%
+calculator-app/backend/internal/api/api.go:197:			recoverPanics		100.0%
+calculator-app/backend/internal/calculator/calculator.go:53:	Error			100.0%
+calculator-app/backend/internal/calculator/calculator.go:55:	newError		100.0%
+calculator-app/backend/internal/calculator/calculator.go:64:	Calculate		100.0%
+calculator-app/backend/internal/calculator/calculator.go:101:	binary			91.7%
+calculator-app/backend/internal/calculator/calculator.go:128:	supported		100.0%
+calculator-app/backend/internal/calculator/calculator.go:136:	isFinite		100.0%
+calculator-app/backend/internal/config/config.go:16:		Port			100.0%
+calculator-app/backend/internal/config/config.go:30:		Addr			100.0%
+total:								(statements)		85.4%
+
+=== Frontend (Vitest v8) ===
+
+> calculator-frontend@0.1.0 test:coverage
+> vitest run --coverage
+
+
+ RUN  v5.0.5 ./frontend
+      Coverage enabled with v8
+
+
+ Test Files  2 passed (2)
+      Tests  20 passed (20)
+   Start at  20:00:00
+   Duration  1.06s (tests 44%, environment 39%, setup 9%, worker 3%, import 3%, transform 1%)
+
+ % Coverage report from v8
+-----------------|---------|----------|---------|---------|-------------------
+File             | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-----------------|---------|----------|---------|---------|-------------------
+All files        |   97.67 |    94.52 |   94.11 |   97.64 |                   
+ src             |       0 |      100 |       0 |       0 |                   
+  App.tsx        |       0 |      100 |       0 |       0 | 4                 
+ src/components  |   98.11 |    93.87 |     100 |   98.11 |                   
+  Calculator.tsx |   98.11 |    93.87 |     100 |   98.11 | 75                
+ src/types       |     100 |       50 |     100 |     100 |                   
+  calculator.ts  |     100 |       50 |     100 |     100 | 32                
+-----------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 97.67% ( 84/86 )
+Branches     : 94.52% ( 69/73 )
+Functions    : 94.11% ( 16/17 )
+Lines        : 97.64% ( 83/85 )
+================================================================================

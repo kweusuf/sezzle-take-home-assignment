@@ -3,10 +3,9 @@
 A small full-stack calculator: a React + TypeScript single-page frontend and a
 Go REST API. Every calculation is performed by the backend.
 
-> Status: **M3 complete** — backend and frontend are implemented and tested;
-> the frontend was verified against the running backend through the Vite dev
-> proxy. Remaining: smoke test, final verification pass, and final docs
-> (M4/M5). Live status: [docs/MILESTONES.md](docs/MILESTONES.md),
+> Status: **complete** — M0–M5 done. Backend and frontend are implemented,
+> tested, and verified together; coverage, smoke test, and documentation are in
+> place. Live status: [docs/MILESTONES.md](docs/MILESTONES.md),
 > [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Features
@@ -24,9 +23,9 @@ Go REST API. Every calculation is performed by the backend.
   `INVALID_OPERAND`, `MISSING_OPERAND`, `UNSUPPORTED_OPERATION`,
   `INVALID_RESULT`, `INVALID_JSON`, `INVALID_REQUEST`, `NOT_FOUND`,
   `METHOD_NOT_ALLOWED`, `REQUEST_TOO_LARGE`, `INTERNAL_ERROR`.
-- Tests: 47 backend core cases + invariant test, 43 HTTP tests (10 success
-  cases, 26 error cases, body limit, health, panic recovery), 20 frontend
-  tests.
+- Tests: 47 backend core cases + invariant test; 10 HTTP success cases, 26 HTTP
+  error cases, plus body-limit, health, exact-body, and panic-recovery tests;
+  20 frontend tests.
 
 ## Technology stack
 
@@ -129,7 +128,8 @@ real backend, then runs 21 HTTP checks), and `cd backend && go test -race
 Observed coverage (2026-10-19): backend `internal/api` 94.0%,
 `internal/calculator` 97.5%, `internal/config` 100.0% statements (85.4% for
 `./...`, which includes the 0% `cmd/server` entry point); frontend 97.67%
-statements / 94.52% branches.
+statements / 94.52% branches. A committed snapshot is at
+[docs/coverage-summary.txt](docs/coverage-summary.txt).
 
 ## Build
 
@@ -211,8 +211,8 @@ Rationale and rejected alternatives: [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Evaluating the application
 
-1. `make test` — backend core/HTTP tests and frontend tests (43 backend test
-   functions/subtests, 20 frontend tests).
+1. `make test` — backend core/HTTP tests (47 core cases + 43 HTTP tests) and
+   20 frontend tests.
 2. `make smoke` — builds and starts the real backend and asserts 21 success and
    error paths over HTTP.
 3. `make run-backend` and `make run-frontend`; open
@@ -231,7 +231,7 @@ Rationale and rejected alternatives: [docs/DECISIONS.md](docs/DECISIONS.md).
   [Handoff](docs/HANDOFF.md)
 - [Architecture](docs/ARCHITECTURE.md) · [API](docs/API.md) ·
   [Testing](docs/TESTING.md) · [Decisions](docs/DECISIONS.md) ·
-  [AI prompts](docs/AI_PROMPTS.md)
+  [AI prompts](docs/AI_PROMPTS.md) · [Coverage summary](docs/coverage-summary.txt)
 
 ## Publication status
 

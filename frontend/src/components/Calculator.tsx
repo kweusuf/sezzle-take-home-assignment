@@ -119,7 +119,12 @@ export function Calculator() {
         </p>
       </header>
 
-      <form className="calculator__form" onSubmit={handleSubmit} noValidate>
+      <form
+        className="calculator__form"
+        onSubmit={handleSubmit}
+        noValidate
+        aria-busy={pending}
+      >
         <div className="field">
           <label htmlFor="operation">Operation</label>
           <select
