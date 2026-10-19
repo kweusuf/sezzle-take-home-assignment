@@ -39,7 +39,7 @@ P1. The self-issued work instructions were, in order:
 | M5 | Final verification, README/docs refresh, clean working tree. | see HANDOFF.md. |
 
 These table rows record intent, not prompts the user wrote; the prompts the
-user should share for the assignment are P1, P2, P4, and P5.
+user should share for the assignment are P1, P2, P4, P5, and P6.
 
 ## P4 — Classic calculator GUI (M6)
 
@@ -85,6 +85,24 @@ user should share for the assignment are P1, P2, P4, and P5.
 - **Reversal note:** M0–M5 deliberately skipped Docker (ADR-010) because
   required work came first. This prompt reverses that decision rather than
   contradicting it silently.
+
+## P6 — Document the test cases and coverage metrics
+
+- **Prompt (user):** "document the test cases too and their coverage percentage
+  and other relevant metrics"
+- **Purpose:** Make the test evidence checkable at a glance instead of only as
+  aggregate percentages.
+- **What was done:** enumerated every case by group (Go core 47 table + 1
+  property, Go HTTP 36 table + 5 standalone, config 7, frontend client 9, UI 27),
+  tied each test file to its subject and that subject's coverage, added per-file
+  frontend coverage via the `json-summary` reporter (the text reporter hides
+  100% files), listed each uncovered Go statement with the reason, and recorded
+  totals, assertion counts, and runtimes.
+- **Result:** `docs/TESTING.md` gained a "Test inventory and coverage metrics"
+  section; `docs/coverage-summary.txt` was regenerated with per-file detail and
+  the exact generating commands. No production code changed, so the coverage
+  numbers are the same as before (Go 85.4% total, frontend 99.31% statements /
+  100% branches); no test was added or removed just to document it.
 
 ## Prompt hygiene notes
 

@@ -307,8 +307,9 @@ Rationale and rejected alternatives: [docs/DECISIONS.md](docs/DECISIONS.md).
 - [Milestones](docs/MILESTONES.md) · [Progress](docs/PROGRESS.md) ·
   [Handoff](docs/HANDOFF.md)
 - [Architecture](docs/ARCHITECTURE.md) · [API](docs/API.md) ·
-  [Testing](docs/TESTING.md) · [Decisions](docs/DECISIONS.md) ·
-  [AI prompts](docs/AI_PROMPTS.md) · [Coverage summary](docs/coverage-summary.txt)
+  [Testing and test inventory](docs/TESTING.md) ·
+  [Coverage summary](docs/coverage-summary.txt) ·
+  [Decisions](docs/DECISIONS.md) · [AI prompts](docs/AI_PROMPTS.md)
 
 ## Publication status
 

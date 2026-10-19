@@ -1,6 +1,8 @@
-Coverage summary — generated 2026-10-19 20:18:51 IST
+Coverage summary — generated 2026-10-19
 Commands: cd backend && go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out
-          cd frontend && npm run test:coverage
+          cd frontend && npm run test:coverage -- --coverage.reporter=json-summary
+Counts:   11 Go test functions / 96 cases; 36 frontend tests in 2 files; 21 smoke checks
+Inventory: docs/TESTING.md → "Test inventory and coverage metrics"
 
 === Go (per function) ===
 calculator-app/backend/cmd/server/main.go:18:			main			0.0%
@@ -54,5 +56,19 @@ Functions    : 95.65% ( 22/23 )
 Lines        : 99.31% ( 146/147 )
 ================================================================================
 
-Note: the Vitest text reporter omits files at 100% coverage, so src/api/client.ts
-is absent above; it is fully covered and appears in frontend/coverage/index.html.
+Per-file detail from the json-summary reporter (the text reporter above omits
+files at 100%, so src/api/client.ts and Calculator.tsx are missing there):
+
+File                          | % Stmts | % Branch | % Funcs | % Lines
+------------------------------|---------|----------|---------|--------
+src/api/client.ts             |     100 |      100 |     100 |     100   (31/31 stmts, 25/25 branches, 5/5 funcs)
+src/components/Calculator.tsx |     100 |      100 |     100 |     100   (115/115 stmts, 74/74 branches, 17/17 funcs)
+src/App.tsx                   |       0 |      100 |       0 |       0   (1/1 stmt uncovered, line 4)
+All files                     |   99.31 |      100 |   95.65 |   99.31
+
+Notes:
+- src/types/calculator.ts is type-only and contributes no statements; src/main.tsx
+  and test files are excluded by vite.config.ts.
+- Go reports statements only (no branch/function percentages). Uncovered Go
+  statements and the reason for each are listed in docs/TESTING.md, together with
+  the case-by-case test inventory.

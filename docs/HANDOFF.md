@@ -79,7 +79,7 @@ Vite proxies `/api` to the backend in development. Details and diagram:
 | `docs/MILESTONES.md` | Milestone register with acceptance criteria and evidence. |
 | `docs/PROGRESS.md` | Authoritative checklist. |
 | `docs/API.md` | API contract. |
-| `docs/TESTING.md` | Test/build commands and observed results. |
+| `docs/TESTING.md` | Test/build commands, observed results, and the test inventory (cases per group, per-file and per-package coverage, uncovered statements and why). |
 | `docs/DECISIONS.md` | ADR register. |
 | `docs/AI_PROMPTS.md` | Record of significant AI prompts. |
 | `.gitignore` | Excludes node_modules, dist, coverage, env files. |

@@ -77,7 +77,11 @@ only after its completion criterion has been verified.
 - [x] `docs/API.md` matches implementation exactly (curl examples verified).
 - [x] `docs/ARCHITECTURE.md` reflects final structure and trade-offs.
 - [x] `docs/DECISIONS.md` contains significant ADRs.
-- [x] `docs/TESTING.md` contains executed commands and observed results.
+- [x] `docs/TESTING.md` contains executed commands and observed results, plus a
+      test inventory: every case grouped by behaviour, each test file tied to
+      its subject's coverage, per-file frontend coverage, every uncovered Go
+      statement with the reason, and totals (96 Go cases, 36 frontend tests,
+      21 smoke checks).
 - [x] `docs/AI_PROMPTS.md` records substantial prompts and purpose.
 - [x] `docs/HANDOFF.md` reflects actual current state.
 - [x] `docs/MILESTONES.md` statuses and evidence updated.

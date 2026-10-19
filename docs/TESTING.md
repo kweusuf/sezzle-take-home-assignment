@@ -79,6 +79,139 @@ The frontend image is the only published port (`8081:80` by default,
 network as `backend:8080`. Health checks come from the images, so
 `docker compose ps` shows `(healthy)` for both services.
 
+## Test inventory and coverage metrics
+
+Snapshot 2026-10-19, from `make test` / `make coverage`:
+`cd backend && go test ./... -coverprofile=coverage.out` and
+`cd frontend && npm run test:coverage -- --coverage.reporter=json-summary`.
+
+### Test files and the coverage of what they test
+
+| Test file | Subject under test | Cases | Coverage of the subject |
+| --- | --- | --- | --- |
+| `backend/internal/calculator/calculator_test.go` | `calculator.go` | 48 (47 table + 1 property) | 97.5% statements |
+| `backend/internal/api/api_test.go` | `api.go` | 41 (36 table + 5 standalone) | 94.0% statements |
+| `backend/internal/config/config_test.go` | `config.go` | 7 | 100% statements |
+| `frontend/src/api/client.test.ts` | `src/api/client.ts` | 9 | 100% stmts / 100% branch / 100% funcs |
+| `frontend/src/components/Calculator.test.tsx` | `Calculator.tsx` | 27 | 100% stmts / 100% branch / 100% funcs |
+| `scripts/smoke.sh` (integration) | `cmd/server` + full stack | 21 checks | entry point: 0% unit, exercised end to end |
+
+**Totals:** 11 Go test functions holding 96 cases, 36 frontend tests in 2 files
+(97 `expect` assertions), plus 21 smoke checks — 132 unit/component cases and
+the end-to-end set. Runtime: Go 0.44–0.46 s per package (~1.3 s total),
+frontend ~2.5 s wall clock.
+
+How the cases assert:
+
+- Go core — successes compare with a `1e-9` tolerance (so `0.3 - 0.1` is checked
+  as `0.2`), failures must return a `*calculator.Error` with the expected code, a
+  non-empty message, and `Error() == Message`. `TestResultsAreAlwaysFinite`
+  sweeps 6 operations × 7 operands × 7 operands (294 combinations) and fails if
+  any non-error result is NaN or ±Inf.
+- Go API — each success asserts status, `Content-Type`, and that the decoded body
+  has exactly one field (`result`) with the expected value; each error asserts
+  status, code, and (for 405) the `Allow` header.
+- Frontend — behavior is asserted through the rendered keypad and the mocked API
+  client (`aria-pressed`/`aria-expanded`, display text, disabled keys), not
+  through component internals.
+
+### Go — `calculator_test.go` (47 table cases + 1 property test)
+
+| Group | Cases | What they pin down |
+| --- | --- | --- |
+| add | 5 | positives, mixed signs, zero, fractions, overflow → `INVALID_RESULT` |
+| subtract | 4 | plain, negative result, negative operand, float artifact (`0.3 - 0.1`) |
+| multiply | 5 | basics, by zero, two negatives, fractions, overflow |
+| divide | 5 | non-integer result, zero numerator, negatives, `/ 0` and `/ -0` → `DIVISION_BY_ZERO` |
+| percentage | 4 | ratio semantics (`25/100` → 25), fraction, zero numerator, zero denominator → `DIVISION_BY_ZERO` |
+| power | 8 | integer/fractional/negative exponents, `0^0` → 1, `(-8)^0.5` → `INVALID_RESULT`, `0^-1` → `INVALID_RESULT`, overflow, negative base with integer exponent |
+| sqrt | 5 | perfect square, zero, fraction, negative → `INVALID_OPERAND`, operand `b` rejected |
+| missing operand | 4 | absent `b` for add/divide/power/percentage → `MISSING_OPERAND` |
+| unsupported operation | 3 | unknown name, empty name, `ADD` (case sensitive) |
+| non-finite operands | 4 | `NaN` in `a` and in `b`, `+Inf`, `-Inf` → `INVALID_OPERAND` |
+| `TestResultsAreAlwaysFinite` | 1 | property check: every row above either errors or returns a finite value |
+
+### Go — `api_test.go` (36 table cases + 5 standalone)
+
+| Group | Cases | Examples → expectation |
+| --- | --- | --- |
+| `TestCalculateSuccess` | 10 | `add 10 5` → 200 `{"result":15}`; same for subtract, negative add, multiply, divide, zero numerator, power, sqrt, sqrt 0, percentage |
+| `TestCalculateErrors` — domain | 13 | `divide 1/0` → 400 `DIVISION_BY_ZERO`; `sqrt -1` → `INVALID_OPERAND`; missing/null/absent operands → `MISSING_OPERAND`; `modulo` and `ADD` → `UNSUPPORTED_OPERATION`; overflow → `INVALID_RESULT` |
+| `TestCalculateErrors` — decoding | 8 | malformed JSON, empty body, trailing value, two objects, unknown field, wrong operand type, array body, `1e400` → 400 `INVALID_JSON` |
+| `TestCalculateErrors` — transport | 5 | `GET`/`PUT` on calculate and `POST` on health → 405 with `Allow`; unknown `/api/v1/...` and `/` → 404 `NOT_FOUND` |
+| `TestCalculateSuccessBodyIsExact` | 1 | 200 body is exactly `{"result":15}`, no extra fields |
+| `TestCalculateBodyTooLarge` | 1 | body over 64 KiB → 413 `REQUEST_TOO_LARGE` |
+| `TestHealth` | 1 | `/health` → 200 `{"status":"ok"}` |
+| `TestPanicRecoveryReturnsInternalError` | 1 | injected panic → 500 `INTERNAL_ERROR`, no detail leak |
+| `TestZeroAndNegativeZeroEncoding` | 1 | `0` and `-0` results encode as JSON numbers, not strings |
+
+### Go — `config_test.go` (7 cases)
+
+`Port()`: unset → default, `9000`, and the fallbacks `abc`, `0`, `-1`, `70000`.
+`Addr()`: returns `:1234` for `PORT=1234`.
+
+### Frontend — `client.test.ts` (9 tests)
+
+Posts the operation and operands; omits `b` for unary operations; maps the
+backend error envelope to `ApiError`; `UNKNOWN_ERROR` when a response has no
+envelope; `INVALID_RESPONSE` for a 200 that is not an object, is `null`, has no
+numeric `result`, or has a non-finite `result`; network failure when `fetch`
+rejects.
+
+### Frontend — `Calculator.test.tsx` (27 tests)
+
+| Describe block | Tests | Focus |
+| --- | --- | --- |
+| `Calculator keypad` | 4 | basic keypad renders, scientific row starts collapsed, expands on the mode button, collapses again |
+| `Calculator entry` | 5 | builds numbers from digits, accepts one decimal point, starts fresh after a result, toggles sign, backspaces and clears with `C` |
+| `Calculator calculations` | 9 | `=` posts to the API, pending operator is shown, chaining evaluates the pending operation first, a repeated operator is replaced, `%`, `√`, `x²` → `power 2`, `1/x` → `divide 1 x`, `xʸ` from the scientific row |
+| `Calculator failures` | 9 | backend error shown with the expression cleared, network failure, fallback message, error cleared by digits/`.`/`±`/`⌫`/scientific keys, `=` with nothing pending, failures from a chained operator and from a scientific key, keypad disabled while a request is in flight |
+
+### Coverage detail — frontend, per file
+
+`npm run test:coverage` prints only files below 100%, so the table below uses the
+`json-summary` reporter:
+
+| File | % Stmts | % Branch | % Funcs | % Lines | Uncovered |
+| --- | --- | --- | --- | --- | --- |
+| All files | 99.31 (146/147) | 100 (99/99) | 95.65 (22/23) | 99.31 (146/147) | |
+| `src/api/client.ts` | 100 (31/31) | 100 (25/25) | 100 (5/5) | 100 (31/31) | — |
+| `src/components/Calculator.tsx` | 100 (115/115) | 100 (74/74) | 100 (17/17) | 100 (115/115) | — |
+| `src/App.tsx` | 0 (0/1) | 100 (0/0) | 0 (0/1) | 0 (0/1) | line 4 |
+
+Excluded by `vite.config.ts`: `src/main.tsx`, `src/test/**`, `**/*.test.*`.
+`src/types/calculator.ts` is type-only and contributes no statements.
+
+### Coverage detail — Go statements never executed
+
+Go reports statement coverage only (no branch or function percentages):
+
+| Package | Statements | Note |
+| --- | --- | --- |
+| `internal/calculator` | 97.5% (39/40) | one unreachable `return` |
+| `internal/api` | 94.0% (63/67) | two defensive branches |
+| `internal/config` | 100% (9/9) | |
+| `cmd/server` | 0.0% (0/14) | covered by the smoke test instead |
+| total | 85.4% | |
+
+| Location | Stmts | Why it is not executed |
+| --- | --- | --- |
+| `cmd/server/main.go` (whole file) | 14 | Thin entry point: signal handling, timeouts, graceful shutdown; asserted end to end by `make smoke` |
+| `internal/api/api.go:97-99` | 3 | Defensive 500 for a domain error that is *not* a `*calculator.Error`; unreachable while the core returns only typed errors |
+| `internal/api/api.go:128` | 1 | The `io.EOF` arm of the empty-body check; the guard is kept for portability across Go versions, but the current decoder routes an empty body through the generic decode-error path |
+| `internal/calculator/calculator.go:125` | 1 | Final `return` after the exhaustive `switch` over the operation constants |
+
+### Reproducing the numbers
+
+```bash
+make test                                    # 96 Go cases + 36 frontend tests
+make coverage                                # Go profile/summary + frontend coverage
+cd backend && go tool cover -func=coverage.out
+cd frontend && npm run test:coverage -- --coverage.reporter=json-summary
+                                             # writes coverage/coverage-summary.json
+make smoke                                   # 21 end-to-end checks
+```
+
 ## Observed results
 
 ### M1 — backend core (2026-10-19)
