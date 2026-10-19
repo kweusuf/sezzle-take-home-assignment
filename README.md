@@ -1,42 +1,42 @@
 # Calculator App
 
 A small full-stack calculator: a React + TypeScript single-page frontend and a
-Go REST API. The frontend consumes the backend for every calculation.
+Go REST API. Every calculation is performed by the backend.
 
-> Status: **M2 complete** — the backend REST API is implemented, tested, and
-> versioned. The frontend does not exist yet (M3). Live status:
-> [docs/MILESTONES.md](docs/MILESTONES.md), [docs/PROGRESS.md](docs/PROGRESS.md).
+> Status: **M3 complete** — backend and frontend are implemented and tested;
+> the frontend was verified against the running backend through the Vite dev
+> proxy. Remaining: smoke test, final verification pass, and final docs
+> (M4/M5). Live status: [docs/MILESTONES.md](docs/MILESTONES.md),
+> [docs/PROGRESS.md](docs/PROGRESS.md).
 
-## Implemented so far
+## Features
 
-**Backend (runnable)**
-
-- Operations: add, subtract, multiply, divide, power, sqrt, percentage.
-- `POST /api/v1/calculate` and `GET /health`.
-- Strict request validation: single JSON object, known fields, 64 KiB body
-  limit, no trailing values.
-- Consistent JSON errors with stable codes and correct status codes
-  (400/404/405/413/500). No stack traces or internal details leak.
-- Port configurable via `PORT` (default `8080`); graceful shutdown.
-- Tests: 47 table-driven core cases + a finite-result invariant test, 10 HTTP
-  success cases, 26 HTTP error cases, body-limit, health, and panic-recovery
+- Operations: add, subtract, multiply, divide, power, square root, percentage.
+- Calculator UI: operation selector, operand inputs, calculate, reset,
+  responsive layout, visible focus states, keyboard submit.
+- The second operand is hidden for unary operations (square root).
+- Client-side validation of empty/non-numeric input; backend is authoritative.
+- Loading state prevents duplicate submissions; stale results and errors are
+  cleared when input changes.
+- Backend validation: single JSON object, known fields, 64 KiB body limit, no
+  trailing values, finite inputs and results only.
+- Consistent JSON errors with stable codes: `DIVISION_BY_ZERO`,
+  `INVALID_OPERAND`, `MISSING_OPERAND`, `UNSUPPORTED_OPERATION`,
+  `INVALID_RESULT`, `INVALID_JSON`, `INVALID_REQUEST`, `NOT_FOUND`,
+  `METHOD_NOT_ALLOWED`, `REQUEST_TOO_LARGE`, `INTERNAL_ERROR`.
+- Tests: 47 backend core cases + invariant test, 43 HTTP tests (10 success
+  cases, 26 error cases, body limit, health, panic recovery), 20 frontend
   tests.
-
-**Planned**
-
-- React + TypeScript calculator UI (operation selector, operands, unary
-  handling, loading/error/result/reset, responsive layout).
-- Frontend tests, smoke test, coverage reports, final documentation.
 
 ## Technology stack
 
 | Layer    | Technology |
 | --- | --- |
-| Frontend | React, TypeScript (strict), Vite, Vitest, React Testing Library (M3) |
+| Frontend | React 19, TypeScript (strict), Vite 8, Vitest 5, React Testing Library |
 | Backend | Go 1.22+, standard library `net/http` and `encoding/json` |
 | Tooling | npm, Make, Git |
 
-No database, no state-management library, no Docker (see
+No database, no state-management library, no CSS framework, no Docker (see
 [docs/DECISIONS.md](docs/DECISIONS.md)).
 
 ## Architecture
@@ -45,10 +45,14 @@ No database, no state-management library, no Docker (see
 Browser (React SPA) --/api/v1/calculate--> Go HTTP service --> calculator core
 ```
 
-The calculator core has no knowledge of HTTP. The frontend validates input for
-usability only; the backend is authoritative. The Vite dev server proxies `/api`
-to `localhost:8080`, so no CORS configuration is needed in development. Details
-and diagram: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- The calculator core (`backend/internal/calculator`) has no knowledge of HTTP.
+- The API layer owns routing, strict decoding, status codes, and the error
+  envelope.
+- The frontend owns presentation and usability validation only.
+- In development the Vite dev server proxies `/api` to `localhost:8080`, so no
+  CORS configuration is needed.
+
+Details and diagram: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Repository structure
 
@@ -60,69 +64,73 @@ and diagram: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 │   ├── internal/calculator/   # arithmetic core + unit tests
 │   ├── internal/config/       # PORT handling
 │   └── go.mod
-├── frontend/                  # React SPA (M3)
+├── frontend/
+│   ├── src/api/               # typed API client + tests
+│   ├── src/components/        # Calculator component + tests
+│   ├── src/types/             # Operation union and operation metadata
+│   ├── src/App.tsx, main.tsx, index.css
+│   ├── index.html, vite.config.ts, tsconfig.json, package.json
 ├── docs/                      # project management and technical docs
-├── Makefile                   # backend targets (frontend targets in M3)
+├── Makefile
 └── README.md
 ```
 
 ## Prerequisites
 
 - Go 1.22 or newer (verified with 1.27.2)
-- Node.js 20 or newer and npm (verified with 26.12.0 / 11.20.0) — needed from M3
-- `curl` for the smoke test
-- Make (optional; raw commands are listed for every target)
+- Node.js 20 or newer and npm (verified with 26.12.0 / 11.20.0)
+- `curl` for manual API checks
+- Make (optional; raw commands are given for every target)
 
 ## Setup
 
 ```bash
-git clone <repository-url>   # after publication
+git clone <repository-url>      # after publication
 cd take-home-assignment
+
 cd backend && go mod download
+cd ../frontend && npm ci
 ```
 
-## How to run the backend
+## How to run the application
+
+Two terminals:
 
 ```bash
-make run-backend             # listens on :8080
-PORT=9000 make run-backend   # custom port
+# terminal 1 — backend on http://localhost:8080
+make run-backend
+
+# terminal 2 — frontend on http://localhost:5173 (proxies /api to :8080)
+make run-frontend
 ```
 
-or without Make:
+Then open <http://localhost:5173>.
+
+Without Make:
 
 ```bash
-cd backend && go run ./cmd/server
+cd backend && go run ./cmd/server     # PORT=9000 to change the port
+cd frontend && npm run dev
 ```
-
-Verify:
-
-```bash
-curl -sS http://localhost:8080/health
-# {"status":"ok"}
-```
-
-## How to run the frontend
-
-Not implemented yet (M3). The plan: `cd frontend && npm install && npm run dev`,
-serving on `:5173` with `/api` proxied to `:8080`.
 
 ## How to run tests
 
 ```bash
-make test-backend
-# or
-cd backend && go test ./...
+make test            # backend + frontend
+make test-backend    # cd backend && go test ./...
+make test-frontend   # cd frontend && npm test
 ```
 
-Also available: `go test ./... -cover`, `go test -race ./...`, `make
-coverage-backend`, `make fmt-check` (gofmt + `go vet`). Frontend test commands
-arrive with M3. Observed results and coverage numbers:
-[docs/TESTING.md](docs/TESTING.md).
+More: `make fmt-check` (gofmt, `go vet`, `tsc --noEmit`), `make coverage`
+(Go coverage profile + frontend coverage), `cd backend && go test -race ./...`.
+Observed results and coverage: [docs/TESTING.md](docs/TESTING.md).
 
 ## Build
 
 ```bash
-make build-backend           # cd backend && go build ./...
+make build                  # Go build + frontend production bundle
+make build-backend
+make build-frontend         # type-check, then vite build → frontend/dist
 ```
 
 ## API summary
@@ -141,8 +149,7 @@ Errors always use one envelope:
 { "error": { "code": "DIVISION_BY_ZERO", "message": "cannot divide by zero" } }
 ```
 
-Full contract, operation table, and every error code:
-[docs/API.md](docs/API.md).
+Full contract, operation table, and every error code: [docs/API.md](docs/API.md).
 
 ### curl examples
 
@@ -165,40 +172,47 @@ curl -sS -X POST http://localhost:8080/api/v1/calculate \
 
 ## Design decisions and assumptions
 
-- **Single endpoint with an operation identifier** rather than one route per
+- **Single endpoint with an operation identifier** instead of one route per
   operation: one validation path, trivially extensible.
 - **Standard-library Go**: two routes do not justify a framework.
-- **Backend is authoritative**; the frontend validates only for fast feedback.
+- **The backend is authoritative**; the client only checks that input is a
+  number so users get fast feedback. It never computes a result.
 - **Percentage is a ratio**: `percentage(a, b) = a / b * 100` ("a is what
-  percent of b"), and a zero denominator is an error.
-- **Floating-point arithmetic with no backend rounding**; NaN and ±Infinity are
-  rejected as inputs and results.
+  percent of b"); a zero denominator is an error.
+- **Floating-point arithmetic, no backend rounding**; NaN and ±Infinity are
+  rejected as inputs and as results.
 - **Strict JSON**: unknown fields, trailing values, and bodies over 64 KiB are
-  rejected; `0` is distinguished from a missing operand.
-- **Dev proxy instead of CORS**.
-- No database: the API is stateless.
+  rejected, and `0` is distinguished from a missing operand.
+- **One error envelope** for every failure, with stable codes.
+- **Dev proxy instead of CORS.**
+- **No database:** the API is stateless.
+- **Unary operations hide the second operand** rather than disabling it.
 
-Rationale and alternatives: [docs/DECISIONS.md](docs/DECISIONS.md).
+Rationale and rejected alternatives: [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Known limitations
 
-- Frontend, smoke test, and coverage reports are still pending (M3/M4).
-- `0.1 + 0.2` returns `0.30000000000000004`; binary floating-point artifacts are
-  not hidden.
-- Percentage is a ratio, not "percent of".
-- Duplicate JSON keys are accepted by Go's decoder (last value wins); detecting
-  them would need a custom decoder.
+- `0.1 + 0.2` returns and displays `0.30000000000000004`; binary floating-point
+  artifacts are not hidden.
+- Percentage is a ratio, not "20% of 50" (use `multiply` with `0.2`).
+- Duplicate JSON keys are accepted by Go's decoder (last value wins).
+- Results are formatted with `String(value)`; extreme magnitudes use
+  exponential notation.
 - No authentication, rate limiting, or persistence; none were requested.
 - Docker support was deliberately skipped (optional in the assignment).
+- The operation list is duplicated in Go and TypeScript; keeping them in sync
+  is manual.
 
 ## Evaluating the application
 
-1. `cd backend && go test ./...` — core and HTTP tests.
-2. `make run-backend` in one terminal.
-3. Run the curl examples above and compare with the documented responses.
-4. Try the edge cases: divide by zero, `sqrt` of a negative number, a `sqrt`
-   request that also sends `b`, unknown fields, and an unknown route.
-5. Once M3 lands: `make run-frontend` and use the UI against this backend.
+1. `make test` — backend core/HTTP tests and frontend tests.
+2. `make run-backend` and `make run-frontend`; open
+   <http://localhost:5173>.
+3. Try `10 + 5`, `√25`, `1 ÷ 0` (shows the backend error message), `abc` as an
+   operand (client-side message), and the Reset button.
+4. Run the curl examples above and compare with the documented responses.
+5. Check the edge cases in [docs/API.md](docs/API.md): unknown fields, trailing
+   JSON, oversized body, unknown route, wrong method.
 
 ## Documentation
 

@@ -84,10 +84,16 @@ A milestone is complete only when its acceptance criteria have been verified.
   - Duplicate submissions prevented; stale results cleared.
   - `tsc --noEmit`, Vitest suite, and production build pass.
 - **Dependencies:** M2 (contract).
-- **Status:** NOT STARTED
+- **Status:** COMPLETE
 - **Verification commands:** `cd frontend && npm run typecheck && npm test && npm run build`
-- **Completion evidence:** pending.
-- **Commits:** pending.
+- **Completion evidence:** `tsc --noEmit` clean; Vitest `2 passed (2)` files,
+  `Tests 20 passed (20)`; production build succeeded (`dist/assets/index-*.js`
+  224.26 kB, gzip 70.31 kB); coverage 97.67% statements / 94.52% branches;
+  dev-server check: `GET http://localhost:5173/` → 200 text/html, proxied
+  `POST /api/v1/calculate {"operation":"percentage","a":25,"b":200}` → 200
+  `{"result":12.5}`, and negative sqrt through the proxy → 400
+  `INVALID_OPERAND`.
+- **Commits:** `feat: implement React calculator interface`.
 
 ## M4: Integration and Quality Assurance
 

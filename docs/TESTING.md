@@ -37,6 +37,7 @@ Git).
 | Coverage | `cd frontend && npm run test:coverage` |
 | Type check | `cd frontend && npm run typecheck` |
 | Production build | `cd frontend && npm run build` |
+| Dev server (proxies `/api` to `:8080`) | `cd frontend && npm run dev` |
 
 TypeScript strict mode (`npm run typecheck`) is the frontend static check; no
 additional linter is installed.
@@ -55,10 +56,9 @@ Coverage artifacts: `frontend/coverage/` (ignored by Git).
 | `make run-frontend` | Vite dev server on `:5173` |
 | `make coverage` | Go coverage profile/summary + frontend coverage |
 | `make fmt-check` | `gofmt` check + TypeScript type check |
-| `make smoke` | Real backend + curl success/error checks |
+| `make smoke` | Real backend + curl success/error checks (M4) |
 
-Backend targets and `fmt-check` exist today. Frontend, aggregate (`test`,
-`build`, `coverage`), and `smoke` targets arrive in M3/M4.
+All targets except `smoke` exist today; `smoke` arrives in M4.
 
 ## Observed results
 
@@ -97,6 +97,35 @@ GET  /nope                       -> 404 {"error":{"code":"NOT_FOUND","message":"
 
 `backend/cmd/server` shows 0.0% statement coverage: it is a thin entry point and
 is exercised by the smoke test rather than unit tests.
+
+### M3 — frontend (2026-10-19)
+
+```text
+$ cd frontend && npm run typecheck       # clean
+$ cd frontend && npm test
+Test Files  2 passed (2)
+     Tests  20 passed (20)
+$ cd frontend && npm run build
+dist/assets/index-*.css   2.23 kB │ gzip:  0.88 kB
+dist/assets/index-*.js  224.26 kB │ gzip: 70.31 kB
+✓ built in 297ms
+
+$ cd frontend && npm run test:coverage
+All files        | 97.67 | 94.52 | 94.11 | 97.64 |
+ src/components | 98.11 | 93.87 |   100 | 98.11 |   (Calculator.tsx)
+ src/types      |   100 |    50 |   100 |   100 |   (calculator.ts)
+Statements 97.67% (84/86) | Branches 94.52% (69/73) | Functions 94.11% (16/17) | Lines 97.64% (83/85)
+```
+
+Coverage artifacts: `frontend/coverage/` (`text` and `html` reporters).
+
+Dev-proxy integration check (backend on `:8080`, Vite dev server on `:5173`):
+
+```text
+GET  http://localhost:5173/                  -> 200 text/html
+POST http://localhost:5173/api/v1/calculate  -> 200 {"result":12.5}   (percentage, 25, 200)
+POST http://localhost:5173/api/v1/calculate  -> 400 {"error":{"code":"INVALID_OPERAND",...}}  (sqrt, -1)
+```
 
 ## Integration / smoke
 

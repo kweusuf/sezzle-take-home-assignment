@@ -42,18 +42,21 @@ only after its completion criterion has been verified.
 
 ## M3: Frontend implementation and tests
 
-- [ ] Scaffold Vite React TypeScript app with npm scripts.
-- [ ] Typed API client (`src/api/client.ts`) with `ApiError`.
-- [ ] Calculator UI: title, operand inputs, operation selector, submit, reset.
-- [ ] Unary sqrt hides operand B.
-- [ ] Client-side validation messages; backend remains authoritative.
-- [ ] Loading state prevents duplicate submissions.
-- [ ] Result and error display with `aria-live`/`role="alert"`.
-- [ ] Stale result/error cleared on input/operation change.
-- [ ] Responsive CSS, visible focus states, keyboard submit.
-- [ ] Vitest + RTL tests for rendering, operations, success, validation, API
-      error, network error, unary, reset, loading.
-- [ ] `npm run typecheck`, `npm test`, `npm run build` pass.
+- [x] Scaffold Vite React TypeScript app with npm scripts.
+- [x] Typed API client (`src/api/client.ts`) with `ApiError`.
+- [x] Calculator UI: title, operand inputs, operation selector, submit, reset.
+- [x] Unary sqrt hides operand B.
+- [x] Client-side validation messages; backend remains authoritative.
+- [x] Loading state prevents duplicate submissions.
+- [x] Result and error display with `aria-live`/`role="alert"`.
+- [x] Stale result/error cleared on input/operation change.
+- [x] Responsive CSS, visible focus states, keyboard submit (form + Enter).
+- [x] Vitest + RTL tests: 5 client tests (request shape, error mapping,
+      network failure, invalid response) and 14 component tests (rendering,
+      operations, unary, validation, API error, network error, unexpected
+      error, loading/duplicate submit, stale result, stale error, reset).
+- [x] `npm run typecheck`, `npm test` (20 passed), `npm run build` pass;
+      frontend coverage 97.67% statements / 94.52% branches.
 
 ## M4: Integration
 

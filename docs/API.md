@@ -116,6 +116,17 @@ curl -sS http://localhost:8080/health
 `{"a":1,"a":2}` is treated as `{"a":2}`. Detecting duplicates would require a
 custom decoder and is out of scope.
 
+## Client-side error codes (frontend only)
+
+The frontend client never computes results. When the request itself fails, it
+raises `ApiError` with a code that the backend never sends:
+
+| Code | Meaning |
+| --- | --- |
+| `NETWORK_ERROR` | `fetch` rejected; the service is unreachable (status `0`). |
+| `INVALID_RESPONSE` | A 2xx response without a numeric `result`. |
+| `UNKNOWN_ERROR` | An error response that does not use the standard envelope. |
+
 ## Numerical behavior
 
 - Operands and results use IEEE-754 `float64`.
