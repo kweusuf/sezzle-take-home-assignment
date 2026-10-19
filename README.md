@@ -104,7 +104,7 @@ Details and diagram: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## Setup
 
 ```bash
-git clone <repository-url>      # after publication
+git clone https://github.com/kweusuf/sezzle-take-home-assignment.git
 cd take-home-assignment
 
 cd backend && go mod download
@@ -312,9 +312,11 @@ Rationale and rejected alternatives: [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Publication status
 
-The repository is **local-only**. No Git remote is configured. To publish:
+Published and public:
+**<https://github.com/kweusuf/sezzle-take-home-assignment>** (`main` tracks
+`origin/main`). The working tree is clean at the latest commit listed in the
+repository history.
 
 ```bash
-git remote add origin <repository-url>
-git push -u origin main
+git clone https://github.com/kweusuf/sezzle-take-home-assignment.git
 ```

@@ -7,7 +7,8 @@ only after its completion criterion has been verified.
 
 - [x] Inspect working directory and confirm no Git repository exists.
 - [x] Record tool versions (Go 1.27.2, Node 26.12.0, npm 11.20.0, Git 2.56.0).
-- [x] Initialize Git repository on `main`; no remote configured.
+- [x] Initialize Git repository on `main` (no remote at that point; `origin` was
+      added later and `main` is published).
 - [x] Create `.gitignore` covering dependencies, build output, coverage, env files.
 - [x] Create milestone register, progress, handoff, architecture, API, testing,
       decisions, and AI prompt documents.
@@ -132,7 +133,9 @@ only after its completion criterion has been verified.
 - [x] Each commit includes its documentation updates.
 - [x] Diff reviewed before commit; no secrets or generated artifacts staged
       (`node_modules/`, `dist/`, coverage HTML/out, binaries are ignored).
-- [x] No remote configured; publication commands documented in README.
+- [x] Remote configured (`origin`) and `main` pushed; publication status in
+      README and HANDOFF reflects the public GitHub repository.
+- [x] Local-only publication status corrected once the remote was added.
 
 ## Final verification and submission readiness
 
@@ -146,6 +149,6 @@ only after its completion criterion has been verified.
 - [x] Smoke test passes (21 checks, 0 failed, run twice).
 - [x] Git working tree clean.
 - [x] README commands verified (`fmt-check`, `test`, `build`, `coverage`,
-      `smoke`, `run-backend`, `run-frontend`).
+      `smoke`, `run-backend`, `run-frontend`, `docker-up`).
 - [x] Known limitations recorded in README and HANDOFF.
-- [x] Local-only publication status stated accurately.
+- [x] Publication status accurate: public GitHub repository, `main` pushed.

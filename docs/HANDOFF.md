@@ -15,11 +15,11 @@ documentation. See [Problem.md](Problem.md) and [Prompt.md](Prompt.md).
 revision that replaced the form with a classic keypad) and M7 (user-requested
 Docker packaging). Backend, frontend, tests, coverage, smoke test, Docker stack,
 and documentation are done and verified. The repository is ready for evaluation
-and is local-only (no Git remote).
+and is published publicly on GitHub (`main` tracks `origin/main`).
 
 ## 3. Current milestone
 
-None — project complete, pending user publication.
+None — project complete and published (pending only optional follow-ups).
 
 ## 4. Completed milestones
 
@@ -44,7 +44,7 @@ None — project complete, pending user publication.
 
 | Area | State |
 | --- | --- |
-| Repository | Initialized on `main`, no remote. |
+| Repository | Initialized on `main` and published to GitHub: public, `main` tracks `origin/main`. |
 | `backend/` | Complete for M1/M2: `cmd/server`, `internal/api`, `internal/calculator`, `internal/config`, tests. |
 | `frontend/` | Complete through M6: Vite + React + TS app, typed client, classic keypad UI with Basic/Scientific modes, 36 tests, `package-lock.json` committed. |
 | `docs/` | Problem.md, Prompt.md, and the eight required project documents present and current. |
@@ -238,7 +238,8 @@ None.
 
 ## 17. Git branch and latest relevant commits
 
-Branch `main`, no remote. History:
+Branch `main`, published to <https://github.com/kweusuf/sezzle-take-home-assignment>
+(public), tracking `origin/main`. History:
 
 - `chore: establish project structure and documentation` (M0)
 - `feat: implement calculator operations and unit tests` (M1)
@@ -250,12 +251,9 @@ Branch `main`, no remote. History:
 
 ## 18. Immediate next steps
 
-Nothing is required. To publish, the user must choose a remote:
-
-```bash
-git remote add origin <repository-url>
-git push -u origin main
-```
+Nothing is required: the repository is published and up to date at
+<https://github.com/kweusuf/sezzle-take-home-assignment>. Further pushes are
+ordinary `git push origin main`.
 
 Optional follow-ups are listed in section 14.
 
@@ -275,8 +273,7 @@ Optional follow-ups are listed in section 14.
 
 ## 20. Decisions that still require approval
 
-- Configuring a Git remote or publishing the repository (and, if wanted,
-  pushing container images to a registry).
+- Pushing container images to a registry or adding CI that builds them.
 - Any change to the agreed architecture (e.g. adding a database, a framework, or
   the trig/log operations the scientific keys do not cover) beyond the
   documented scope.
