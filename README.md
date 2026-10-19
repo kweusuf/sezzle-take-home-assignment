@@ -122,8 +122,14 @@ make test-frontend   # cd frontend && npm test
 ```
 
 More: `make fmt-check` (gofmt, `go vet`, `tsc --noEmit`), `make coverage`
-(Go coverage profile + frontend coverage), `cd backend && go test -race ./...`.
-Observed results and coverage: [docs/TESTING.md](docs/TESTING.md).
+(Go coverage profile + frontend coverage), `make smoke` (builds and starts the
+real backend, then runs 21 HTTP checks), and `cd backend && go test -race
+./...`. Observed results and coverage: [docs/TESTING.md](docs/TESTING.md).
+
+Observed coverage (2026-10-19): backend `internal/api` 94.0%,
+`internal/calculator` 97.5%, `internal/config` 100.0% statements (85.4% for
+`./...`, which includes the 0% `cmd/server` entry point); frontend 97.67%
+statements / 94.52% branches.
 
 ## Build
 
@@ -205,13 +211,16 @@ Rationale and rejected alternatives: [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Evaluating the application
 
-1. `make test` — backend core/HTTP tests and frontend tests.
-2. `make run-backend` and `make run-frontend`; open
+1. `make test` — backend core/HTTP tests and frontend tests (43 backend test
+   functions/subtests, 20 frontend tests).
+2. `make smoke` — builds and starts the real backend and asserts 21 success and
+   error paths over HTTP.
+3. `make run-backend` and `make run-frontend`; open
    <http://localhost:5173>.
-3. Try `10 + 5`, `√25`, `1 ÷ 0` (shows the backend error message), `abc` as an
+4. Try `10 + 5`, `√25`, `1 ÷ 0` (shows the backend error message), `abc` as an
    operand (client-side message), and the Reset button.
-4. Run the curl examples above and compare with the documented responses.
-5. Check the edge cases in [docs/API.md](docs/API.md): unknown fields, trailing
+5. Run the curl examples above and compare with the documented responses.
+6. Check the edge cases in [docs/API.md](docs/API.md): unknown fields, trailing
    JSON, oversized body, unknown route, wrong method.
 
 ## Documentation

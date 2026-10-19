@@ -3,7 +3,7 @@ NPM ?= npm
 
 .PHONY: test test-backend test-frontend build build-backend build-frontend \
 	run-backend run-frontend coverage coverage-backend coverage-frontend \
-	fmt-check fmt-check-backend fmt-check-frontend
+	fmt-check fmt-check-backend fmt-check-frontend smoke
 
 test: test-backend test-frontend
 
@@ -44,3 +44,6 @@ fmt-check-backend:
 
 fmt-check-frontend:
 	cd frontend && $(NPM) run typecheck
+
+smoke:
+	./scripts/smoke.sh

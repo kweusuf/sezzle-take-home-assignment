@@ -56,9 +56,9 @@ Coverage artifacts: `frontend/coverage/` (ignored by Git).
 | `make run-frontend` | Vite dev server on `:5173` |
 | `make coverage` | Go coverage profile/summary + frontend coverage |
 | `make fmt-check` | `gofmt` check + TypeScript type check |
-| `make smoke` | Real backend + curl success/error checks (M4) |
+| `make smoke` | Real backend + curl success/error checks |
 
-All targets except `smoke` exist today; `smoke` arrives in M4.
+All targets exist and were executed on 2026-10-19; see "Observed results".
 
 ## Observed results
 
@@ -130,12 +130,42 @@ POST http://localhost:5173/api/v1/calculate  -> 400 {"error":{"code":"INVALID_OP
 ## Integration / smoke
 
 ```bash
-./scripts/smoke.sh
+./scripts/smoke.sh            # or: make smoke
 ```
 
-The script builds and starts the backend on an unused port, waits for
-`/health`, exercises success and error paths, and fails on any mismatch. It
-shuts the server down on exit.
+The script builds the backend, starts it on `SMOKE_PORT` (default `8099`),
+waits for `/health`, then asserts 21 success and error paths over HTTP
+(operations, division by zero, negative square root, arity errors, unsupported
+operation, malformed/unknown-field/trailing JSON, wrong method, unknown route).
+It exits non-zero on the first mismatch and always kills the server it started.
+
+### M4 — integration and full check set (2026-10-19)
+
+```text
+$ make fmt-check      # gofmt clean, go vet clean, tsc --noEmit clean
+$ make test           # Go: ok for 3 packages; frontend: 2 files, 20 tests passed
+$ make build          # go build ok; vite build → dist 224.26 kB js (gzip 70.31 kB)
+$ make coverage       # Go total 85.4% statements; frontend 97.67% statements
+$ make smoke
+Building backend...
+Smoke testing http://127.0.0.1:8099
+21 checks, 0 failed
+```
+
+Observed coverage:
+
+| Scope | Coverage |
+| --- | --- |
+| `internal/api` | 94.0% statements |
+| `internal/calculator` | 97.5% statements |
+| `internal/config` | 100.0% statements |
+| `cmd/server` | 0.0% statements (thin entry point; covered by the smoke test) |
+| Go total (`go test ./...`) | 85.4% statements |
+| frontend total | 97.67% statements, 94.52% branches, 94.11% functions, 97.64% lines |
+
+The Vitest `text` reporter hides files at 100% coverage, which is why
+`src/api/client.ts` does not appear in the console table; it is present in
+`frontend/coverage/index.html` at 100%.
 
 ## Environment limitations (current)
 

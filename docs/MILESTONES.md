@@ -107,10 +107,16 @@ A milestone is complete only when its acceptance criteria have been verified.
   - Go and frontend coverage generated and percentages recorded.
   - `make test`, `make build`, `make fmt-check` pass.
 - **Dependencies:** M1–M3.
-- **Status:** NOT STARTED
-- **Verification commands:** `make test`, `make build`, `make smoke`, `make coverage`
-- **Completion evidence:** pending.
-- **Commits:** pending.
+- **Status:** COMPLETE
+- **Verification commands:** `make fmt-check`, `make test`, `make build`, `make coverage`, `make smoke`
+- **Completion evidence:** all five targets succeeded on 2026-10-19.
+  `scripts/smoke.sh` ran 21 checks against a real server on `:8099`, 0 failed
+  (success and error paths, documented in TESTING.md). Go coverage: `api`
+  94.0%, `calculator` 97.5%, `config` 100.0%, total 85.4% (includes the 0%
+  `cmd/server` entry point). Frontend coverage: 97.67% statements / 94.52%
+  branches. Frontend/backend contract verified through the Vite dev proxy in M3
+  and through the smoke script in M4.
+- **Commits:** `test: add integration smoke test and record coverage`.
 
 ## M5: Documentation and Submission Readiness
 

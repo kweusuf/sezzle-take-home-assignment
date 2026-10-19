@@ -11,14 +11,14 @@ documentation. See [Problem.md](Problem.md) and [Prompt.md](Prompt.md).
 
 ## 2. Current overall status
 
-M3 complete: backend REST API and React frontend are both implemented, tested,
-and verified against each other through the Vite dev proxy. Remaining work is
-M4 (smoke test, recorded coverage) and M5 (final verification and docs).
+M4 complete: backend, frontend, and integration checks are green
+(`make fmt-check`, `make test`, `make build`, `make coverage`, `make smoke`).
+Remaining: M5 (final verification pass, final documentation, clean tree).
 Git repository is local-only with no remote.
 
 ## 3. Current milestone
 
-M4: Integration and Quality Assurance (`NOT STARTED`).
+M5: Documentation and Submission Readiness (`IN PROGRESS`).
 
 ## 4. Completed milestones
 
@@ -28,6 +28,8 @@ M4: Integration and Quality Assurance (`NOT STARTED`).
   live curl verification, 94.0% (`api`) / 100% (`config`) coverage.
 - M3: React Frontend — typed client, calculator UI, 20 tests, 97.67% statement
   coverage, production build, proxy verified against the live backend.
+- M4: Integration and QA — `scripts/smoke.sh` (21 checks, 0 failures), all Make
+  targets green, coverage recorded in TESTING.md.
 
 ## 5. Current implementation state
 
@@ -37,8 +39,8 @@ M4: Integration and Quality Assurance (`NOT STARTED`).
 | `backend/` | Complete for M1/M2: `cmd/server`, `internal/api`, `internal/calculator`, `internal/config`, tests. |
 | `frontend/` | Complete for M3: Vite + React + TS app, typed client, calculator UI, 20 tests, `package-lock.json` committed. |
 | `docs/` | Problem.md, Prompt.md, and the eight required project documents present and current. |
-| `Makefile` | All documented targets except `smoke` exist. |
-| `scripts/` | Not created (M4). |
+| `Makefile` | All documented targets exist and pass. |
+| `scripts/smoke.sh` | End-to-end smoke test (21 checks) against a real backend. |
 
 ## 6. Architecture summary
 
@@ -103,10 +105,9 @@ make test-frontend    # cd frontend && npm test
 make build            # go build + frontend production build
 make coverage         # Go profile/summary + frontend coverage report
 make fmt-check        # gofmt + go vet + tsc --noEmit
+make smoke            # builds and starts the backend, runs 21 HTTP checks
 cd backend && go test -race ./...
 ```
-
-`make smoke` arrives with M4.
 
 ## 12. Most recent successful verification results
 
@@ -158,9 +159,35 @@ POST http://localhost:5173/api/v1/calculate     -> 200 {"result":12.5}   (percen
 POST http://localhost:5173/api/v1/calculate     -> 400 {"error":{"code":"INVALID_OPERAND",...}}  (sqrt -1)
 ```
 
+### M4 — integration and full check set (executed 2026-10-19)
+
+```text
+$ make fmt-check      # gofmt clean, go vet clean, tsc --noEmit clean
+$ make test           # Go: ok for 3 packages; frontend: 2 files, 20 tests passed
+$ make build          # go build ok; vite build → dist 224.26 kB js (gzip 70.31 kB)
+$ make coverage       # Go total 85.4%; frontend 97.67% stmts
+$ make smoke
+Building backend...
+Smoke testing http://127.0.0.1:8099
+21 checks, 0 failed
+```
+
+Coverage detail:
+
+| Scope | Coverage | Note |
+| --- | --- | --- |
+| `internal/api` | 94.0% stmts | |
+| `internal/calculator` | 97.5% stmts | unreachable final return in `binary` |
+| `internal/config` | 100.0% stmts | |
+| `cmd/server` | 0.0% stmts | thin entry point, exercised by `make smoke` |
+| Go total (`./...`) | 85.4% stmts | includes `cmd/server` |
+| frontend total | 97.67% stmts / 94.52% branches | `src/api/client.ts` is 100% (hidden by the reporter's `skipFull`) |
+
+The Vitest `text` reporter hides files at 100% coverage; use
+`frontend/coverage/index.html` for the per-file view.
+
 ## 13. Known defects and limitations
 
-- No smoke script yet (M4); `make smoke` does not exist.
 - Percentage semantics are a ratio (`a/b*100`), not "percent of".
 - Only floating-point arithmetic; binary artifacts (e.g. `0.1+0.2`) are
   returned and displayed as-is.
@@ -171,7 +198,8 @@ POST http://localhost:5173/api/v1/calculate     -> 400 {"error":{"code":"INVALID
 
 ## 14. Outstanding tasks
 
-M4 and M5. See [PROGRESS.md](PROGRESS.md) for the per-task checklist.
+M5 only: final verification pass, README/docs final state, clean working tree.
+See [PROGRESS.md](PROGRESS.md) for the per-task checklist.
 
 ## 15. Blockers and their causes
 
@@ -197,16 +225,16 @@ Branch `main`, no remote. History:
 - `chore: establish project structure and documentation` (M0)
 - `feat: implement calculator operations and unit tests` (M1)
 - `feat: add calculator REST API and HTTP tests` (M2)
-- `feat: implement React calculator interface` (M3)
+- `test: add integration smoke test and record coverage` (M4)
+- M5 commit pending.
 
 ## 18. Immediate next steps
 
-1. Add `scripts/smoke.sh` (start backend on a free port, assert success and
-   error paths) and a `smoke` Make target.
-2. Run the full verification set (`make test`, `make build`, `make fmt-check`,
-   `make smoke`, `make coverage`) and record the real output in
-   `docs/TESTING.md`.
-3. Update README/docs, review the diff, and commit M4; then finalize M5.
+1. Run the final verification set and re-check API examples against the
+   implementation.
+2. Confirm no secrets, artifacts, or unrelated files are tracked.
+3. Finalize README, PROGRESS, MILESTONES, TESTING, and this document; commit M5
+   and confirm a clean working tree.
 
 ## 19. Approval decisions already made
 

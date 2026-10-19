@@ -60,12 +60,15 @@ only after its completion criterion has been verified.
 
 ## M4: Integration
 
-- [ ] Frontend request shape matches backend contract (single typed client).
-- [ ] `scripts/smoke.sh` starts real backend, checks success and error paths.
-- [ ] Vite dev proxy routes `/api` to backend.
-- [ ] `make test`, `make build`, `make fmt-check`, `make smoke` pass.
-- [ ] Go coverage profile generated; frontend coverage generated.
-- [ ] Actual coverage percentages recorded in `docs/TESTING.md`.
+- [x] Frontend request shape matches backend contract (single typed client;
+      `operation`, `a`, optional `b`).
+- [x] `scripts/smoke.sh` starts a real backend and checks 21 success/error
+      paths; `make smoke` passes.
+- [x] Vite dev proxy routes `/api` to backend (verified with curl in M3).
+- [x] `make test`, `make build`, `make fmt-check`, `make smoke` pass.
+- [x] Go coverage profile generated (`backend/coverage.out`); frontend coverage
+      generated (`frontend/coverage/`).
+- [x] Actual coverage recorded in `docs/TESTING.md`.
 
 ## M5: Documentation
 
@@ -80,10 +83,11 @@ only after its completion criterion has been verified.
 
 ## Git hygiene
 
-- [ ] Small, focused commits per milestone.
-- [ ] Each commit includes its documentation updates.
-- [ ] Diff reviewed before commit; no secrets or generated artifacts staged.
-- [ ] No remote configured; publication commands documented in README.
+- [x] Small, focused commits per milestone (M0–M3 landed; M4/M5 in progress).
+- [x] Each commit includes its documentation updates.
+- [x] Diff reviewed before commit; no secrets or generated artifacts staged
+      (`node_modules/`, `dist/`, coverage, and binaries are ignored).
+- [x] No remote configured; publication commands documented in README.
 
 ## Final verification and submission readiness
 
