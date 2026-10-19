@@ -1,4 +1,4 @@
-Coverage summary — generated 2026-10-19 19:59:59 IST
+Coverage summary — generated 2026-10-19 20:18:51 IST
 Commands: cd backend && go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out
           cd frontend && npm run test:coverage
 
@@ -26,36 +26,33 @@ calculator-app/backend/internal/config/config.go:30:		Addr			100.0%
 total:								(statements)		85.4%
 
 === Frontend (Vitest v8) ===
-
-> calculator-frontend@0.1.0 test:coverage
 > vitest run --coverage
 
 
- RUN  v5.0.5 ./frontend
+ RUN  v5.0.5 /Volumes/T7/MBA/Development/code/personal/interview/sezzle/take-home-assignment/frontend
       Coverage enabled with v8
 
 
  Test Files  2 passed (2)
-      Tests  20 passed (20)
-   Start at  20:00:00
-   Duration  1.06s (tests 44%, environment 39%, setup 9%, worker 3%, import 3%, transform 1%)
+      Tests  36 passed (36)
+   Start at  20:18:52
+   Duration  2.48s (tests 59%, environment 31%, setup 6%, worker 1%, import 1%, transform 1%)
 
  % Coverage report from v8
 -----------------|---------|----------|---------|---------|-------------------
 File             | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
 -----------------|---------|----------|---------|---------|-------------------
-All files        |   97.67 |    94.52 |   94.11 |   97.64 |                   
+All files        |   99.31 |      100 |   95.65 |   99.31 |                   
  src             |       0 |      100 |       0 |       0 |                   
   App.tsx        |       0 |      100 |       0 |       0 | 4                 
- src/components  |   98.11 |    93.87 |     100 |   98.11 |                   
-  Calculator.tsx |   98.11 |    93.87 |     100 |   98.11 | 75                
- src/types       |     100 |       50 |     100 |     100 |                   
-  calculator.ts  |     100 |       50 |     100 |     100 | 32                
 -----------------|---------|----------|---------|---------|-------------------
 
 =============================== Coverage summary ===============================
-Statements   : 97.67% ( 84/86 )
-Branches     : 94.52% ( 69/73 )
-Functions    : 94.11% ( 16/17 )
-Lines        : 97.64% ( 83/85 )
+Statements   : 99.31% ( 146/147 )
+Branches     : 100% ( 99/99 )
+Functions    : 95.65% ( 22/23 )
+Lines        : 99.31% ( 146/147 )
 ================================================================================
+
+Note: the Vitest text reporter omits files at 100% coverage, so src/api/client.ts
+is absent above; it is fully covered and appears in frontend/coverage/index.html.

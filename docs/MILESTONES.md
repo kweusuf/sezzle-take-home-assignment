@@ -139,6 +139,36 @@ A milestone is complete only when its acceptance criteria have been verified.
   clean after the final commit.
 - **Commits:** `docs: finalize project documentation and verification`.
 
+## M6: Classic Calculator GUI (user-requested revision)
+
+- **Objective:** Replace the form UI with a classic calculator interface: a key
+  for every operation, basic and scientific modes, and an animated expansion
+  from basic to scientific.
+- **Scope:** Rewrite `Calculator.tsx` around an immediate-execution state
+  machine, add the keypad/mode-toggle markup and animations to `index.css`,
+  reduce `types/calculator.ts` to the operation union, tighten the API client's
+  response check, rewrite the component tests, and update the docs.
+- **Deliverables:** Keypad UI with Basic/Scientific modes, `1/x` / `x²` / `xʸ` /
+  `√` keys, animated reveal, updated tests, ADR-011 and ADR-012.
+- **Acceptance criteria:**
+  - Every supported operation is reachable from a key.
+  - Scientific keys appear only in scientific mode and expand with the toggle.
+  - Arithmetic still happens only in the backend.
+  - Requests cannot be duplicated while one is in flight.
+  - Typecheck, tests, build, and the existing smoke test still pass.
+- **Dependencies:** M3 (UI), M2 (contract).
+- **Status:** COMPLETE
+- **Verification commands:** `make fmt-check`, `make test`, `make build`,
+  `make coverage`, `make smoke`
+- **Completion evidence:** `tsc --noEmit` clean; Vitest 2 files, 36 tests passed;
+  production build ok (225.28 kB js, 70.66 kB gzip); frontend coverage 99.31%
+  statements / 100% branches (was 97.67% / 94.52%); `make smoke` 21 checks,
+  0 failed; Go coverage unchanged (85.4% total). Verified on 2026-10-19:
+  `2 + 3 × 4 =` gives 20 with one `add` and one `multiply` request, `√25` gives
+  5, `x²` on 7 gives 49, `1/x` on 4 gives 0.25, and `1 ÷ 0` shows the backend
+  `DIVISION_BY_ZERO` message.
+- **Commits:** `feat: replace calculator form with keypad GUI`.
+
 ## Optional (not tracked as required milestones)
 
 - Dockerfile / Compose for full-stack deployment. Only if required work is done

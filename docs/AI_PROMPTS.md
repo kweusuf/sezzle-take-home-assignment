@@ -27,8 +27,8 @@ interactions are omitted.
 
 ## P3 — Milestone execution (M1–M5)
 
-There were no further user prompts after P2: the agent executed M1–M5 directly
-from P1. The self-issued work instructions were, in order:
+There were no user prompts during M1–M5: the agent executed them directly from
+P1. The self-issued work instructions were, in order:
 
 | Milestone | Work instruction given to the agent | Outcome |
 | --- | --- | --- |
@@ -39,7 +39,29 @@ from P1. The self-issued work instructions were, in order:
 | M5 | Final verification, README/docs refresh, clean working tree. | see HANDOFF.md. |
 
 These table rows record intent, not prompts the user wrote; the prompts the
-user should share for the assignment are P1 and P2.
+user should share for the assignment are P1, P2, and P4.
+
+## P4 — Classic calculator GUI (M6)
+
+- **Prompt (user):** "this looks very basic, i want a classic calculator GUI
+  where there are buttons for every operation and a basic and scientific mode
+  and a button click expands the basic mode into scientific mode with a slick
+  animation."
+- **Purpose:** Replace the form UI with a keypad, add Basic and Scientific modes,
+  and animate the expansion.
+- **Decisions taken while executing (no follow-up round trip):** scientific keys
+  are limited to operations the backend already implements (`√`, `x²`, `xʸ`,
+  `1/x`), so the API contract is untouched; operators chain with immediate
+  execution (no precedence); the `%` key remains the backend ratio operation
+  rather than "percent of the previous operand"; the reveal is a CSS
+  `grid-template-rows: 0fr → 1fr` transition, removed under
+  `prefers-reduced-motion`.
+- **Result:** Keypad UI with an animated scientific row, 36 frontend tests,
+  99.31% statement / 100% branch coverage, ADR-011 and ADR-012 recorded, all
+  docs updated, smoke test still 21/21.
+- **Not done, and why:** trigonometry, logarithms, and parentheses would require
+  new backend operations; the request was scoped to a GUI change, so the API was
+  left alone. Offered as a follow-up.
 
 ## Prompt hygiene notes
 

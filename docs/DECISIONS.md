@@ -104,3 +104,38 @@ Lightweight ADR register. Significant decisions only.
   adds build surface without demonstrating core engineering.
 - **Consequences:** Deployment is out of scope; publication commands are in the
   README.
+
+## ADR-011: Classic keypad UI with immediate execution
+
+- **Context:** The first frontend pass was a form (operation selector + operand
+  inputs). The user then asked for a classic calculator GUI with a key for every
+  operation.
+- **Decision:** Replace the form with a 4-column keypad (digits, `.`, `±`, `⌫`,
+  `C`, `÷ × − +`, `%`, `=`) that follows the immediate-execution model: pressing
+  a binary operator evaluates any pending operation first.
+- **Alternatives:** Keep the form; build an expression parser with operator
+  precedence.
+- **Rationale:** Matches the requested interaction, needs no parser, and keeps
+  every arithmetic result coming from the backend (ADR-007). The component only
+  assembles operands and formats returned numbers.
+- **Consequences:** No parentheses and no precedence (`2 + 3 × 4 =` evaluates
+  left to right). Repeated `=` does not repeat the last operation. All keys are
+  disabled while a request is in flight.
+
+## ADR-012: Scientific mode limited to backend operations, revealed by animation
+
+- **Context:** The user asked for basic and scientific modes, expanding with a
+  slick animation on a button click.
+- **Decision:** Scientific mode adds a row of keys that map onto existing backend
+  operations: `√` (sqrt), `x²` (power with exponent 2), `xʸ` (power), and `1/x`
+  (divide). The row is revealed with an animated
+  `grid-template-rows: 0fr → 1fr` transition; while collapsed it is marked
+  `aria-hidden` and `inert` so it cannot be focused or clicked, and the
+  transition is removed under `prefers-reduced-motion`.
+- **Alternatives:** Add backend operations for trig/log/parentheses; a separate
+  scientific panel; animating a hard-coded height.
+- **Rationale:** Trig, log, and parentheses would need new arithmetic and
+  contract changes the assignment did not ask for. `0fr → 1fr` animates the real
+  content height, so it stays correct at any font size.
+- **Consequences:** Scientific mode is presentation-layer only; the API is
+  unchanged. `sin`, `log`, and parentheses need new backend operations first.

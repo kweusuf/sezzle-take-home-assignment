@@ -73,6 +73,24 @@ describe('calculate', () => {
     expect((failure as ApiError).status).toBe(502);
   });
 
+  it('reports INVALID_RESPONSE for a 200 that is not an object', async () => {
+    mockFetch(async () => new Response('"ok"', { status: 200 }));
+
+    const failure = await calculate('add', 1, 2).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(ApiError);
+    expect((failure as ApiError).code).toBe(CLIENT_ERROR_CODES.invalidResponse);
+  });
+
+  it('reports INVALID_RESPONSE for a 200 with a null body', async () => {
+    mockFetch(async () => new Response('null', { status: 200 }));
+
+    const failure = await calculate('add', 1, 2).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(ApiError);
+    expect((failure as ApiError).code).toBe(CLIENT_ERROR_CODES.invalidResponse);
+  });
+
   it('reports a network failure when fetch rejects', async () => {
     mockFetch(async () => {
       throw new TypeError('Failed to fetch');
@@ -89,6 +107,21 @@ describe('calculate', () => {
     mockFetch(async () => jsonResponse(200, { result: '15' }));
 
     const failure = await calculate('add', 1, 2).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(ApiError);
+    expect((failure as ApiError).code).toBe(CLIENT_ERROR_CODES.invalidResponse);
+  });
+
+  it('reports INVALID_RESPONSE for a non-finite result', async () => {
+    mockFetch(
+      async () =>
+        new Response('{"result":1e309}', {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    );
+
+    const failure = await calculate('multiply', 1e308, 10).catch((error: unknown) => error);
 
     expect(failure).toBeInstanceOf(ApiError);
     expect((failure as ApiError).code).toBe(CLIENT_ERROR_CODES.invalidResponse);

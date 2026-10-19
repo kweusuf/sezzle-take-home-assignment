@@ -82,9 +82,34 @@ only after its completion criterion has been verified.
 - [x] `docs/MILESTONES.md` statuses and evidence updated.
 - [x] Committed coverage summary at `docs/coverage-summary.txt`.
 
+## M6: Classic calculator GUI (user request)
+
+- [x] Replace the operation selector and operand inputs with a keypad
+      (digits, `.`, `±`, `⌫`, `C`, `÷ × − +`, `%`, `=`).
+- [x] Add Basic/Scientific mode toggle with a mode button.
+- [x] Animate the scientific row open and closed
+      (`grid-template-rows: 0fr → 1fr`, 340 ms); drop the transition under
+      `prefers-reduced-motion`; mark the collapsed row `aria-hidden` + `inert`.
+- [x] Map scientific keys onto existing operations: `√` (sqrt), `x²` (power,
+      exponent 2), `xʸ` (power), `1/x` (divide).
+- [x] Immediate execution: an operator press evaluates the pending operation
+      before chaining, so `2 + 3 × 4 =` → 20.
+- [x] Keep arithmetic in the backend only; digit/sign/backspace are string edits.
+- [x] Disable all keys while a request is in flight; clear errors on the next
+      key press.
+- [x] Rewrite component tests for keypad entry, chaining, scientific keys, error
+      recovery, and the mode toggle (36 frontend tests total).
+- [x] Tighten the client: a 200 response must carry a finite `result`.
+- [x] `make fmt-check`, `make test`, `make build`, `make coverage`, `make smoke`
+      all pass; frontend coverage 99.31% statements / 100% branches.
+- [x] Record ADR-011 (keypad + immediate execution) and ADR-012 (scientific mode
+      scope and animation) in `docs/DECISIONS.md`.
+- [x] Update README, ARCHITECTURE, TESTING, MILESTONES, HANDOFF, AI_PROMPTS.
+
 ## Git hygiene
 
-- [x] Small, focused commits per milestone (five commits, one per milestone).
+- [x] Small, focused commits per milestone (seven commits: M0–M5 plus the M6 GUI
+      revision).
 - [x] Each commit includes its documentation updates.
 - [x] Diff reviewed before commit; no secrets or generated artifacts staged
       (`node_modules/`, `dist/`, coverage HTML/out, binaries are ignored).
@@ -94,7 +119,8 @@ only after its completion criterion has been verified.
 
 - [x] Backend tests and HTTP tests pass (`go test -count=1 ./...`, also with
       `-race`).
-- [x] Frontend tests, typecheck, and build pass (20 tests).
+- [x] Frontend tests, typecheck, and build pass (36 tests after the M6 GUI
+      revision).
 - [x] Formatting/vet checks pass (`gofmt -l` empty, `go vet`, `tsc --noEmit`).
 - [x] Coverage reports generated (`make coverage`; summary committed at
       `docs/coverage-summary.txt`).

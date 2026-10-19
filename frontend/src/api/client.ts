@@ -40,11 +40,12 @@ function hasErrorPayload(value: unknown): value is ErrorPayload {
 }
 
 function isResultPayload(value: unknown): value is { result: number } {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as { result?: unknown }).result === 'number'
-  );
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const { result } = value as { result?: unknown };
+  // Non-finite results (e.g. a serialized 1e309) are contract violations.
+  return typeof result === 'number' && Number.isFinite(result);
 }
 
 async function readJson(response: Response): Promise<unknown> {

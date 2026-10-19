@@ -11,9 +11,11 @@ documentation. See [Problem.md](Problem.md) and [Prompt.md](Prompt.md).
 
 ## 2. Current overall status
 
-**All required milestones (M0–M5) are complete.** Backend, frontend, tests,
-coverage, smoke test, and documentation are done and verified. The repository is
-ready for evaluation and is local-only (no Git remote).
+**All required milestones (M0–M5) are complete**, plus M6, a user-requested GUI
+revision that replaced the form with a classic keypad (Basic/Scientific modes).
+Backend, frontend, tests, coverage, smoke test, and documentation are done and
+verified. The repository is ready for evaluation and is local-only (no Git
+remote).
 
 ## 3. Current milestone
 
@@ -31,6 +33,9 @@ None — project complete, pending user publication.
   targets green, coverage recorded.
 - M5: Documentation and Submission Readiness — final verification, committed
   coverage summary, clean tree.
+- M6: Classic Calculator GUI — keypad with a key per operation, Basic/Scientific
+  modes with an animated reveal, immediate-execution chaining, 36 tests, 99.31%
+  statement / 100% branch coverage.
 
 ## 5. Current implementation state
 
@@ -38,7 +43,7 @@ None — project complete, pending user publication.
 | --- | --- |
 | Repository | Initialized on `main`, no remote. |
 | `backend/` | Complete for M1/M2: `cmd/server`, `internal/api`, `internal/calculator`, `internal/config`, tests. |
-| `frontend/` | Complete for M3: Vite + React + TS app, typed client, calculator UI, 20 tests, `package-lock.json` committed. |
+| `frontend/` | Complete through M6: Vite + React + TS app, typed client, classic keypad UI with Basic/Scientific modes, 36 tests, `package-lock.json` committed. |
 | `docs/` | Problem.md, Prompt.md, and the eight required project documents present and current. |
 | `Makefile` | All documented targets exist and pass. |
 | `scripts/smoke.sh` | End-to-end smoke test (21 checks) against a real backend. |
@@ -60,8 +65,8 @@ Vite proxies `/api` to the backend in development. Details and diagram:
 | `backend/internal/calculator/calculator.go` | Arithmetic core: operations, typed `Error{Code,Message}`, arity and numeric rules. |
 | `backend/internal/config/config.go` | `PORT` handling with `DefaultPort = 8080`. |
 | `frontend/src/api/client.ts` | Typed client for `POST /api/v1/calculate`; throws `ApiError` with backend or client error codes. |
-| `frontend/src/components/Calculator.tsx` | Calculator UI: operation select, operands, validation, loading/error/result, reset. |
-| `frontend/src/types/calculator.ts` | `Operation` union and operation metadata (label, unary flag). |
+| `frontend/src/components/Calculator.tsx` | Classic keypad UI: key definitions, immediate-execution state machine, mode toggle, display, error/loading states. |
+| `frontend/src/types/calculator.ts` | `Operation` union mirroring the Go operation constants (display metadata lives in the component). |
 | `frontend/vite.config.ts` | React plugin, `/api` dev proxy to `:8080`, Vitest jsdom + coverage config. |
 | `docs/MILESTONES.md` | Milestone register with acceptance criteria and evidence. |
 | `docs/PROGRESS.md` | Authoritative checklist. |
@@ -79,7 +84,7 @@ Implemented and documented in [API.md](API.md):
 tested; messages are not contractual. The frontend client,
 `frontend/src/api/client.ts`, exposes `ApiError { code, status, message }` and
 adds three client-only codes: `NETWORK_ERROR` (fetch rejected),
-`INVALID_RESPONSE` (2xx without a numeric `result`), and `UNKNOWN_ERROR`
+`INVALID_RESPONSE` (2xx without a finite numeric `result`), and `UNKNOWN_ERROR`
 (error response without the standard envelope).
 
 ## 9. Technology and dependency decisions
@@ -113,7 +118,7 @@ cd backend && go test -race ./...
 ## 12. Most recent successful verification results
 
 Final verification pass (2026-10-19), all executed with a clean cache where it
-matters:
+matters; frontend numbers are from the M6 GUI revision:
 
 ```text
 $ cd backend && gofmt -l . && go vet ./...          # no output
@@ -124,10 +129,10 @@ ok  internal/config      0.448s  coverage: 100.0% of statements
 ?   cmd/server           [no test files]
 $ cd backend && go test -count=1 -race ./...        # all ok
 $ cd frontend && npm run typecheck                  # clean
-$ cd frontend && npm test                           # 2 files, 20 tests passed
+$ cd frontend && npm test                           # 2 files, 36 tests passed
 $ make fmt-check && make test && make build         # all OK
 $ make smoke                                        # 21 checks, 0 failed
-$ make coverage                                     # Go total 85.4%; frontend 97.67%
+$ make coverage                                     # Go total 85.4%; frontend 99.31% statements
 ```
 
 Details, per-package coverage, and the exact smoke cases:
@@ -148,7 +153,15 @@ percentage 25/200 → 200 `{"result":12.5}`, sqrt −1 → 400
 
 ## 13. Known defects and limitations
 
-- Percentage semantics are a ratio (`a/b*100`), not "percent of".
+- Percentage semantics are a ratio (`a/b*100`), not "percent of". In the keypad
+  the `%` key is that ratio operation, which differs from the percentage
+  behaviour of some physical calculators.
+- The keypad evaluates left to right with immediate execution: no operator
+  precedence, no parentheses, and `=` does not repeat the last operation.
+- Scientific mode (`√`, `x²`, `xʸ`, `1/x`) covers only the operations the backend
+  implements; trig, log, and parentheses need new backend operations.
+- The reveal animation is CSS-only and was not verified in a real browser here
+  (no Playwright browser build installed); tests assert the state that drives it.
 - Only floating-point arithmetic; binary artifacts (e.g. `0.1+0.2`) are
   returned and displayed as-is.
 - Duplicate JSON keys cannot be detected with `encoding/json` (documented
@@ -166,7 +179,9 @@ percentage 25/200 → 200 `{"result":12.5}`, sqrt −1 → 400
 ## 14. Outstanding tasks
 
 None for the required scope. Optional ideas: Docker support, a browser-level
-E2E test, and a generated/shared operation contract.
+E2E test (which would also verify the reveal animation), a generated/shared
+operation contract, and backend operations for trig/log if a scientific
+calculator is wanted.
 
 ## 15. Blockers and their causes
 
@@ -182,8 +197,9 @@ None.
   proxy).
 - `frontend/src/types/calculator.ts` is the single source of operation
   identifiers on the client; it mirrors the Go constants in
-  `backend/internal/calculator/calculator.go`. Keeping them in sync is manual
-  and covered by the smoke test.
+  `backend/internal/calculator/calculator.go`, and the keypad maps UI keys onto
+  those identifiers. Keeping them in sync is manual and covered by the smoke
+  test.
 
 ## 17. Git branch and latest relevant commits
 
@@ -194,6 +210,7 @@ Branch `main`, no remote. History:
 - `feat: add calculator REST API and HTTP tests` (M2)
 - `test: add integration smoke test and record coverage` (M4)
 - `docs: finalize project documentation and verification` (M5)
+- `feat: replace calculator form with keypad GUI` (M6)
 
 ## 18. Immediate next steps
 
@@ -214,6 +231,9 @@ Optional follow-ups are listed in section 14.
 - Percentage defined as `a / b * 100`; zero denominator is an error.
 - Body limit 64 KiB; unknown fields and trailing JSON rejected.
 - Recover middleware turns panics into `500 INTERNAL_ERROR` with no details.
+- M6: classic keypad with immediate execution; scientific keys limited to
+  existing backend operations; the reveal animation is CSS-only (ADR-011,
+  ADR-012).
 
 ## 20. Decisions that still require approval
 

@@ -1,7 +1,7 @@
 # Architecture
 
-Status: M0 design, implementation pending. This document describes the agreed
-design and will be updated as milestones complete.
+Status: implemented. This document describes the code as built, last updated
+during M6 (classic keypad UI).
 
 ## High-level
 
@@ -24,31 +24,46 @@ flowchart LR
 
 | Component | Responsibility |
 | --- | --- |
-| React UI (`src/components`, `src/App.tsx`) | Input, presentation, loading/error states, usability validation. |
+| React UI (`src/components`, `src/App.tsx`) | Classic keypad, immediate-execution state machine, presentation, loading/error states. |
 | API client (`src/api`) | HTTP request shape, JSON parsing, typed `ApiError`. |
 | Go API (`internal/api`) | Routing, strict JSON decoding, status codes, error envelope. |
 | Calculator core (`internal/calculator`) | Arithmetic, arity validation, numeric domain rules. |
 | Config (`internal/config`) | Read `PORT` with a default. |
 
-Business arithmetic exists only in the backend. The frontend performs format
-validation only (empty/non-numeric input) for fast feedback; it never computes
-results.
+Business arithmetic exists only in the backend. The frontend collects operands
+and displays returned numbers; it never computes a result. Digit entry, sign
+toggle, and backspace are string edits on the display value, not arithmetic.
 
 ## Request flow
 
-1. User selects an operation, enters operands, submits the form.
-2. Frontend validates format and builds `{operation, a, b?}`.
-3. `fetch` sends `POST /api/v1/calculate` (same origin, proxied in development).
-4. Backend decodes strictly (single JSON value, known fields, size limit),
+1. User presses an operator key with a pending operation still unevaluated; the
+   component sends the pending `{operation, a, b}` for evaluation first.
+2. `fetch` sends `POST /api/v1/calculate` (same origin, proxied in development).
+3. Backend decodes strictly (single JSON value, known fields, size limit),
    validates operation and arity, then calls the calculator core.
-5. Success returns `200 {"result": number}`; domain errors return `400` with
+4. Success returns `200 {"result": number}`; domain errors return `400` with
    `{"error": {"code", "message"}}`.
-6. Frontend renders the result or mapped error message.
+5. Frontend formats the returned number into the display and keeps it as the
+   next operand.
+
+Key mapping (immediate execution, no precedence):
+
+| Key | Request |
+| --- | --- |
+| `+ − × ÷ %` then `=` | `{operation, a: left, b: right}` on `=` |
+| `√` | `{operation: "sqrt", a}` immediately |
+| `x²` | `{operation: "power", a, b: 2}` immediately |
+| `xʸ` | `{operation: "power", a: left, b: right}` on `=` |
+| `1/x` | `{operation: "divide", a: 1, b}` immediately |
+
+Pressing a binary operator while a previous operation is pending evaluates that
+operation first, so `2 + 3 × 4 =` returns 20 (left to right). All keys are
+disabled while a request is in flight, which prevents duplicate submissions.
 
 ## Validation ownership
 
-- **Frontend (usability):** required fields, numeric format, unary/binary form
-  shape.
+- **Frontend (usability):** which keys are available and when, plus the display
+  grammar (single decimal point, sign toggle, backspace).
 - **Backend (authoritative):** JSON structure, operation support, operand
   presence/arity, finite inputs, division by zero, domain errors (negative
   sqrt), finite results.

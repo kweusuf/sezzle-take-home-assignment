@@ -1,7 +1,7 @@
 # Testing
 
-Status: commands are planned at M0. Observed results will be added after each
-verification run. Nothing in this file is claimed as passed until it has run.
+All commands and results below were executed; nothing is claimed as passed
+without an observed run. The M6 section records the most recent frontend run.
 
 ## Prerequisites
 
@@ -127,6 +127,39 @@ POST http://localhost:5173/api/v1/calculate  -> 200 {"result":12.5}   (percentag
 POST http://localhost:5173/api/v1/calculate  -> 400 {"error":{"code":"INVALID_OPERAND",...}}  (sqrt, -1)
 ```
 
+### M6 — keypad GUI revision (2026-10-19)
+
+The M6 revision replaced the form UI with a keypad and rewrote the frontend
+tests, so the M3 test list and coverage numbers above are historical; the
+following run supersedes them.
+
+```text
+$ cd frontend && npm run typecheck       # clean
+$ cd frontend && npm test
+Test Files  2 passed (2)
+     Tests  36 passed (36)
+$ cd frontend && npm run build
+dist/assets/index-*.css   3.73 kB │ gzip:  1.37 kB
+dist/assets/index-*.js  225.28 kB │ gzip: 70.66 kB
+✓ built in 220ms
+
+$ cd frontend && npm run test:coverage
+All files        | 99.31 |      100 |   95.65 |   99.31 |
+ src             |     0 |      100 |       0 |       0 |  (App.tsx)
+Statements 99.31% (146/147) | Branches 100% (99/99) | Functions 95.65% (22/23) | Lines 99.31% (146/147)
+```
+
+Component tests now cover: keypad rendering, digit/decimal/sign/backspace/clear
+entry, binary operations through the API, operator chaining without precedence,
+operator replacement, the `%` key, scientific keys (`√`, `x²`, `xʸ`, `1/x`),
+Basic/Scientific toggling (including the collapsed-row `aria-hidden` and inert
+state), backend error display, network and unexpected failures, error recovery
+on the next key press, and the disabled-keypad behavior while a request is in
+flight.
+
+Client tests add coverage for a non-object 200 body, a `null` 200 body, and a
+non-finite `result` (`1e309`), all mapped to `INVALID_RESPONSE`.
+
 ## Integration / smoke
 
 ```bash
@@ -143,7 +176,7 @@ It exits non-zero on the first mismatch and always kills the server it started.
 
 ```text
 $ make fmt-check      # gofmt clean, go vet clean, tsc --noEmit clean
-$ make test           # Go: ok for 3 packages; frontend: 2 files, 20 tests passed
+$ make test           # Go: ok for 3 packages; frontend: 2 files, 20 tests passed (36 after M6)
 $ make build          # go build ok; vite build → dist 224.26 kB js (gzip 70.31 kB)
 $ make coverage       # Go total 85.4% statements; frontend 97.67% statements
 $ make smoke
@@ -161,7 +194,8 @@ Observed coverage:
 | `internal/config` | 100.0% statements |
 | `cmd/server` | 0.0% statements (thin entry point; covered by the smoke test) |
 | Go total (`go test ./...`) | 85.4% statements |
-| frontend total | 97.67% statements, 94.52% branches, 94.11% functions, 97.64% lines |
+| frontend total (M3 run) | 97.67% statements, 94.52% branches, 94.11% functions, 97.64% lines |
+| frontend total (M6 run) | 99.31% statements, 100% branches, 95.65% functions, 99.31% lines |
 
 The Vitest `text` reporter hides files at 100% coverage, which is why
 `src/api/client.ts` does not appear in the console table; it is present in
@@ -169,7 +203,8 @@ The Vitest `text` reporter hides files at 100% coverage, which is why
 
 ## Final verification pass
 
-Executed on 2026-10-19 after all documentation and code changes:
+Executed on 2026-10-19 after all documentation and code changes (frontend
+numbers are from the M6 GUI revision):
 
 ```text
 $ cd backend && gofmt -l .                  # no output
@@ -181,12 +216,12 @@ ok  internal/config      0.448s  coverage: 100.0% of statements
 ?   cmd/server           [no test files]
 $ cd backend && go test -count=1 -race ./...    # all ok
 $ cd frontend && npm run typecheck              # clean
-$ cd frontend && npm test                       # 2 files, 20 tests passed
+$ cd frontend && npm test                       # 2 files, 36 tests passed
 $ make fmt-check                                # OK
 $ make test                                     # OK
-$ make build                                    # OK (dist 224.26 kB js, gzip 70.31 kB)
+$ make build                                    # OK (dist 225.28 kB js, gzip 70.66 kB)
 $ make smoke                                    # 21 checks, 0 failed
-$ make coverage                                 # Go total 85.4%; frontend 97.67%
+$ make coverage                                 # Go total 85.4%; frontend 99.31% statements
 ```
 
 A committed text snapshot of the coverage output is at
@@ -196,8 +231,8 @@ coverage` and, if desired, copy the output; HTML reports stay local at
 
 Uncovered areas are deliberate: the unreachable final return in
 `calculator.binary`, the defensive non-`*calculator.Error` 500 branch in
-`handleCalculate`, the `main` entry point (smoke-tested), `App.tsx` (rendered
-only by `main.tsx`), and the fallback branch in `operationOption`.
+`handleCalculate`, the `main` entry point (smoke-tested), and `App.tsx`
+(rendered only by `main.tsx`, so its component body is never asserted).
 
 ## Environment limitations (current)
 
@@ -205,5 +240,9 @@ only by `main.tsx`), and the fallback branch in `operationOption`.
   first pass.
 - No browser-based end-to-end runner is installed; UI behavior is covered by
   jsdom-based React Testing Library tests, and the HTTP integration is covered
-  by the smoke script (M4).
+  by the smoke script (M4). The M6 reveal animation is CSS-only and was not
+  verified in a real browser in this environment (no Playwright browser build
+  installed); the tests assert the state that drives it (`aria-expanded`,
+  `aria-hidden`, and the reveal class), and the reviewer is expected to eyeball
+  the transition at <http://localhost:5173>.
 - `backend/cmd/server` is not unit tested; the smoke test covers it.

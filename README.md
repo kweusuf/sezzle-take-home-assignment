@@ -3,7 +3,8 @@
 A small full-stack calculator: a React + TypeScript single-page frontend and a
 Go REST API. Every calculation is performed by the backend.
 
-> Status: **complete** — M0–M5 done. Backend and frontend are implemented,
+> Status: **complete** — M0–M5 done, plus an M6 revision that replaced the form
+> UI with a classic calculator keypad. Backend and frontend are implemented,
 > tested, and verified together; coverage, smoke test, and documentation are in
 > place. Live status: [docs/MILESTONES.md](docs/MILESTONES.md),
 > [docs/PROGRESS.md](docs/PROGRESS.md).
@@ -11,12 +12,16 @@ Go REST API. Every calculation is performed by the backend.
 ## Features
 
 - Operations: add, subtract, multiply, divide, power, square root, percentage.
-- Calculator UI: operation selector, operand inputs, calculate, reset,
-  responsive layout, visible focus states, keyboard submit.
-- The second operand is hidden for unary operations (square root).
-- Client-side validation of empty/non-numeric input; backend is authoritative.
-- Loading state prevents duplicate submissions; stale results and errors are
-  cleared when input changes.
+- Classic calculator keypad: digits, `.`, `±`, `⌫`, `C`, `÷ × − +`, `%`, `=`,
+  with a live LCD-style display showing the pending operation.
+- Basic and Scientific modes: a mode button expands a second key row
+  (`√`, `x²`, `xʸ`, `1/x`) with an animated reveal; the hidden row is inert.
+- Immediate execution: pressing an operator evaluates the pending operation
+  first, so results update left to right (`2 + 3 × 4 =` gives 20).
+- Every result, including `√`, `x²`, and `1/x`, comes from the backend; the
+  frontend only assembles operands and formats returned numbers.
+- Keys are disabled while a request is in flight, so duplicate submissions are
+  impossible; results and errors clear when new input starts.
 - Backend validation: single JSON object, known fields, 64 KiB body limit, no
   trailing values, finite inputs and results only.
 - Consistent JSON errors with stable codes: `DIVISION_BY_ZERO`,
@@ -25,7 +30,7 @@ Go REST API. Every calculation is performed by the backend.
   `METHOD_NOT_ALLOWED`, `REQUEST_TOO_LARGE`, `INTERNAL_ERROR`.
 - Tests: 47 backend core cases + invariant test; 10 HTTP success cases, 26 HTTP
   error cases, plus body-limit, health, exact-body, and panic-recovery tests;
-  20 frontend tests.
+  36 frontend tests.
 
 ## Technology stack
 
@@ -65,8 +70,8 @@ Details and diagram: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 │   └── go.mod
 ├── frontend/
 │   ├── src/api/               # typed API client + tests
-│   ├── src/components/        # Calculator component + tests
-│   ├── src/types/             # Operation union and operation metadata
+│   ├── src/components/        # Calculator keypad + tests
+│   ├── src/types/             # Operation union (mirrors the Go constants)
 │   ├── src/App.tsx, main.tsx, index.css
 │   ├── index.html, vite.config.ts, tsconfig.json, package.json
 ├── docs/                      # project management and technical docs
@@ -127,8 +132,8 @@ real backend, then runs 21 HTTP checks), and `cd backend && go test -race
 
 Observed coverage (2026-10-19): backend `internal/api` 94.0%,
 `internal/calculator` 97.5%, `internal/config` 100.0% statements (85.4% for
-`./...`, which includes the 0% `cmd/server` entry point); frontend 97.67%
-statements / 94.52% branches. A committed snapshot is at
+`./...`, which includes the 0% `cmd/server` entry point); frontend 99.31%
+statements / 100% branches. A committed snapshot is at
 [docs/coverage-summary.txt](docs/coverage-summary.txt).
 
 ## Build
@@ -192,7 +197,11 @@ curl -sS -X POST http://localhost:8080/api/v1/calculate \
 - **One error envelope** for every failure, with stable codes.
 - **Dev proxy instead of CORS.**
 - **No database:** the API is stateless.
-- **Unary operations hide the second operand** rather than disabling it.
+- **Classic keypad with immediate execution**: the UI behaves like a physical
+  calculator (evaluate on operator press, no precedence) and needs no
+  expression parser.
+- **Scientific mode maps onto existing operations**: `√`, `x²`, `xʸ`, and `1/x`
+  reuse `sqrt`, `power`, and `divide`, so the API contract is unchanged.
 
 Rationale and rejected alternatives: [docs/DECISIONS.md](docs/DECISIONS.md).
 
@@ -200,7 +209,15 @@ Rationale and rejected alternatives: [docs/DECISIONS.md](docs/DECISIONS.md).
 
 - `0.1 + 0.2` returns and displays `0.30000000000000004`; binary floating-point
   artifacts are not hidden.
-- Percentage is a ratio, not "20% of 50" (use `multiply` with `0.2`).
+- Percentage is a ratio, not "20% of 50" (use `×` with `0.2`). The `%` key is the
+  ratio operation, not the "percent of the previous operand" behaviour of some
+  calculators.
+- No operator precedence or parentheses: the keypad evaluates left to right as
+  you press operators, and pressing `=` twice does not repeat the last
+  operation.
+- Scientific mode covers the operations the backend implements (`√`, `x²`,
+  `xʸ`, `1/x`). Trigonometry, logarithms, and parentheses would require new
+  backend operations.
 - Duplicate JSON keys are accepted by Go's decoder (last value wins).
 - Results are formatted with `String(value)`; extreme magnitudes use
   exponential notation.
@@ -212,13 +229,13 @@ Rationale and rejected alternatives: [docs/DECISIONS.md](docs/DECISIONS.md).
 ## Evaluating the application
 
 1. `make test` — backend core/HTTP tests (47 core cases + 43 HTTP tests) and
-   20 frontend tests.
+   36 frontend tests.
 2. `make smoke` — builds and starts the real backend and asserts 21 success and
    error paths over HTTP.
 3. `make run-backend` and `make run-frontend`; open
    <http://localhost:5173>.
-4. Try `10 + 5`, `√25`, `1 ÷ 0` (shows the backend error message), `abc` as an
-   operand (client-side message), and the Reset button.
+4. Press `1 0 + 5 =` (15), `√` on `25` in scientific mode (5), `1 ÷ 0 =` (shows
+   the backend error message), `2 + 3 × 4 =` (20, left-to-right), then `C`.
 5. Run the curl examples above and compare with the documented responses.
 6. Check the edge cases in [docs/API.md](docs/API.md): unknown fields, trailing
    JSON, oversized body, unknown route, wrong method.
