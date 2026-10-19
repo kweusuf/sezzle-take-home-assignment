@@ -1,0 +1,19 @@
+# Full stack: nginx serves the built SPA and proxies /api to the Go service, so
+# the browser stays same-origin (ADR-008). Health checks come from the images.
+services:
+  backend:
+    build: ./backend
+    image: calculator-backend:local
+    environment:
+      PORT: "8080"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    image: calculator-frontend:local
+    ports:
+      - "${FRONTEND_PORT:-8081}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped

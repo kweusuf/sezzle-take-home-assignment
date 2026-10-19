@@ -169,6 +169,38 @@ A milestone is complete only when its acceptance criteria have been verified.
   `DIVISION_BY_ZERO` message.
 - **Commits:** `feat: replace calculator form with keypad GUI`.
 
+## M7: Docker Packaging (user-requested)
+
+- **Objective:** Run the whole stack with Docker: two images plus Compose, with
+  the SPA and API behind one origin.
+- **Scope:** `backend/Dockerfile`, `frontend/Dockerfile`, `frontend/nginx.conf`,
+  `docker-compose.yml`, `.dockerignore` files, Makefile targets, docs.
+- **Deliverables:** Multi-stage images (static Go binary; Vite build served by
+  nginx), nginx reverse proxy for `/api/` and `/health`, Compose service wiring
+  with health checks.
+- **Acceptance criteria:**
+  - `docker compose up --build` starts both services and both report healthy,
+    with the frontend waiting for the backend.
+  - The browser entry point serves the SPA and proxies the API.
+  - The API is not published on the host; the frontend is.
+  - Deep links return the SPA (`try_files` fallback).
+  - The local, non-Docker workflow still passes (`make test`, `make smoke`).
+- **Dependencies:** M2 (API), M3/M6 (frontend build), decision ADR-013.
+- **Status:** COMPLETE
+- **Verification commands:** `make docker-build`, `make docker-up`,
+  `docker compose ps`, `curl` against `:8081`, `curl` against the images'
+  health endpoints, `make docker-down`.
+- **Completion evidence:** both images built (`calculator-backend:local` 22.3 MB,
+  `calculator-frontend:local` 102 MB) and both containers reported
+  `Up (healthy)`; through nginx on `:8081`: `/health` → `{"status":"ok"}`,
+  `add 10 5` → `{"result":15}`, `sqrt 25` → `{"result":5}`, `divide 1/0` → `400
+  DIVISION_BY_ZERO`, `/` → 200 text/html, `/assets/index-*.js` → 200
+  application/javascript (225 281 bytes), `/some/unknown/route` → 200 (SPA
+  fallback); the backend container runs as `uid=10001(app)` and publishes no host
+  port. Local checks re-run after the change: `make test` pass, `make smoke`
+  21/21.
+- **Commits:** `chore: add Docker packaging for the full stack`.
+
 ## Optional (not tracked as required milestones)
 
 - Dockerfile / Compose for full-stack deployment. Only if required work is done

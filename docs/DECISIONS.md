@@ -97,6 +97,8 @@ Lightweight ADR register. Significant decisions only.
 
 ## ADR-010: No Docker in the first pass
 
+> Superseded by [ADR-013](#adr-013-docker-for-the-full-stack) (M7).
+
 - **Context:** Docker support is optional.
 - **Decision:** Skip Dockerfiles/Compose; document local workflow and Makefile.
 - **Alternatives:** Multi-stage Docker build with Compose.
@@ -139,3 +141,33 @@ Lightweight ADR register. Significant decisions only.
   content height, so it stays correct at any font size.
 - **Consequences:** Scientific mode is presentation-layer only; the API is
   unchanged. `sin`, `log`, and parentheses need new backend operations first.
+
+## ADR-013: Docker for the full stack
+
+- **Context:** Docker was skipped in the first pass (ADR-010) because required
+  work came first; the user then asked for it. The two services must run behind a
+  single origin, because the API has no CORS middleware (ADR-008).
+- **Decision:** Two multi-stage images plus Compose:
+  - `backend/Dockerfile`: `golang:1.27-alpine` builds a static binary
+    (`CGO_ENABLED=0`, `-trimpath -ldflags='-s -w'`), which runs on
+    `alpine:3.24` as an unprivileged user (`uid 10001`).
+  - `frontend/Dockerfile`: `node:26-alpine` runs `npm ci` and `npm run build`
+    (which type-checks first), then the static bundle is copied into
+    `nginx:alpine`.
+  - `frontend/nginx.conf` serves the SPA with a `try_files` fallback and proxies
+    `/api/` and `/health` to `http://backend:8080`, so the browser stays
+    same-origin and no CORS is needed. It re-resolves the backend through
+    Docker's embedded DNS so a restarted backend does not leave a stale IP.
+  - `docker-compose.yml` publishes only the frontend (`8081:80`) and waits for
+    the backend to be healthy before starting nginx. Health checks live in the
+    images (`wget` against `/health` and `/`).
+- **Alternatives:** A single image running both processes; serving the SPA from
+  the Go binary; publishing the API port directly to the host; CORS instead of a
+  proxy.
+- **Rationale:** Keeps the "same origin, no CORS" property in production, keeps
+  the runtime image small (22.3 MB backend), and leaves the API unexposed.
+  Proxying through nginx means the frontend needs no build-time API URL, so the
+  same bundle works locally and in the container.
+- **Consequences:** The frontend image carries nginx (~102 MB), and the compose
+  stack expects a Docker network for the `backend` DNS name. Docker Compose is
+  the only deployment path documented; no registry push or orchestration.

@@ -39,7 +39,7 @@ P1. The self-issued work instructions were, in order:
 | M5 | Final verification, README/docs refresh, clean working tree. | see HANDOFF.md. |
 
 These table rows record intent, not prompts the user wrote; the prompts the
-user should share for the assignment are P1, P2, and P4.
+user should share for the assignment are P1, P2, P4, and P5.
 
 ## P4 — Classic calculator GUI (M6)
 
@@ -62,6 +62,29 @@ user should share for the assignment are P1, P2, and P4.
 - **Not done, and why:** trigonometry, logarithms, and parentheses would require
   new backend operations; the request was scoped to a GUI change, so the API was
   left alone. Offered as a follow-up.
+
+## P5 — Dockerize the stack (M7)
+
+- **Prompt (user):** "can we dockerize this?"
+- **Purpose:** Package both services so the whole application runs from one
+  command instead of two local dev servers.
+- **Decisions taken while executing:** nginx serves the built SPA and proxies
+  `/api/` and `/health`, so the containerized shape keeps the single-origin
+  property the Vite dev proxy provides (still no CORS); only the frontend port
+  is published, leaving the API inside the compose network; health checks live
+  in the images so `docker compose ps` reports real readiness and the frontend
+  waits for the backend; the API is built as a static binary and runs
+  unprivileged; no build-time API URL, so one bundle works locally and in the
+  container.
+- **Result:** both images build (backend 22.3 MB, frontend 102 MB) and both
+  containers report healthy; through `:8081` the SPA, static assets, proxied API
+  (including `DIVISION_BY_ZERO`), `/health`, and deep-link fallback were
+  verified with curl; Make targets `docker-build`, `docker-up`, and `docker-down`
+  added; ADR-013 recorded and ADR-010 marked superseded; local checks re-run
+  unchanged.
+- **Reversal note:** M0–M5 deliberately skipped Docker (ADR-010) because
+  required work came first. This prompt reverses that decision rather than
+  contradicting it silently.
 
 ## Prompt hygiene notes
 

@@ -3,10 +3,11 @@
 A small full-stack calculator: a React + TypeScript single-page frontend and a
 Go REST API. Every calculation is performed by the backend.
 
-> Status: **complete** — M0–M5 done, plus an M6 revision that replaced the form
-> UI with a classic calculator keypad. Backend and frontend are implemented,
-> tested, and verified together; coverage, smoke test, and documentation are in
-> place. Live status: [docs/MILESTONES.md](docs/MILESTONES.md),
+> Status: **complete** — M0–M5 done, plus M6 (classic keypad GUI) and M7
+> (Docker packaging). Backend and frontend are implemented, tested, and verified
+> together, locally and as a Compose stack; coverage, smoke test, and
+> documentation are in place. Live status:
+> [docs/MILESTONES.md](docs/MILESTONES.md),
 > [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Features
@@ -38,15 +39,24 @@ Go REST API. Every calculation is performed by the backend.
 | --- | --- |
 | Frontend | React 19, TypeScript (strict), Vite 8, Vitest 5, React Testing Library |
 | Backend | Go 1.22+, standard library `net/http` and `encoding/json` |
+| Packaging | Docker (multi-stage images) + Docker Compose; nginx serves the SPA |
 | Tooling | npm, Make, Git |
 
-No database, no state-management library, no CSS framework, no Docker (see
-[docs/DECISIONS.md](docs/DECISIONS.md)).
+No database, no state-management library, no CSS framework. Rationale for each
+choice: [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Architecture
 
 ```text
 Browser (React SPA) --/api/v1/calculate--> Go HTTP service --> calculator core
+```
+
+In the Compose stack the browser talks only to nginx, which serves the built SPA
+and proxies `/api/` and `/health` to the Go service, so production keeps the same
+single-origin shape as the dev proxy:
+
+```text
+Browser --> nginx :80 (static bundle + /api proxy) --> Go service :8080
 ```
 
 - The calculator core (`backend/internal/calculator`) has no knowledge of HTTP.
@@ -67,13 +77,17 @@ Details and diagram: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 │   ├── internal/api/          # router, decoding, error envelope, HTTP tests
 │   ├── internal/calculator/   # arithmetic core + unit tests
 │   ├── internal/config/       # PORT handling
+│   ├── Dockerfile             # static binary on alpine, non-root, health check
 │   └── go.mod
 ├── frontend/
 │   ├── src/api/               # typed API client + tests
 │   ├── src/components/        # Calculator keypad + tests
 │   ├── src/types/             # Operation union (mirrors the Go constants)
 │   ├── src/App.tsx, main.tsx, index.css
+│   ├── Dockerfile             # Vite build, then static files on nginx
+│   ├── nginx.conf             # SPA fallback + /api and /health proxy
 │   ├── index.html, vite.config.ts, tsconfig.json, package.json
+├── docker-compose.yml         # backend + frontend, frontend published on :8081
 ├── docs/                      # project management and technical docs
 ├── Makefile
 └── README.md
@@ -85,6 +99,7 @@ Details and diagram: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Node.js 20 or newer and npm (verified with 26.12.0 / 11.20.0)
 - `curl` for manual API checks
 - Make (optional; raw commands are given for every target)
+- Docker with Compose (optional; only for the containerized run)
 
 ## Setup
 
@@ -117,6 +132,40 @@ cd backend && go run ./cmd/server     # PORT=9000 to change the port
 cd frontend && npm run dev
 ```
 
+## Run with Docker
+
+One command builds both images and starts the stack; then open
+<http://localhost:8081>.
+
+```bash
+make docker-up          # docker compose up --build -d
+docker compose ps       # both services should report (healthy)
+docker compose logs -f
+make docker-down        # stop and remove
+```
+
+What runs:
+
+- `frontend` — nginx serves the built SPA and proxies `/api/` and `/health` to
+  the backend, so the browser stays same-origin (no CORS). Published on
+  `8081:80`; override with `FRONTEND_PORT=...`.
+- `backend` — the Go service on `:8080`, **not** published to the host, running
+  as an unprivileged user; nginx waits for it to report healthy.
+
+The API is reachable through the same port as the app:
+
+```bash
+curl -sS -X POST http://localhost:8081/api/v1/calculate \
+  -H 'Content-Type: application/json' -d '{"operation":"add","a":10,"b":5}'
+# {"result":15}
+
+curl -sS http://localhost:8081/health
+# {"status":"ok"}
+```
+
+Observed image sizes: backend 22.3 MB, frontend 102 MB. Commands and results:
+[docs/TESTING.md](docs/TESTING.md).
+
 ## How to run tests
 
 ```bash
@@ -142,6 +191,7 @@ statements / 100% branches. A committed snapshot is at
 make build                  # Go build + frontend production bundle
 make build-backend
 make build-frontend         # type-check, then vite build → frontend/dist
+make docker-build           # build the backend and frontend images
 ```
 
 ## API summary
@@ -202,6 +252,9 @@ curl -sS -X POST http://localhost:8080/api/v1/calculate \
   expression parser.
 - **Scientific mode maps onto existing operations**: `√`, `x²`, `xʸ`, and `1/x`
   reuse `sqrt`, `power`, and `divide`, so the API contract is unchanged.
+- **Docker, with nginx as the single entry point**: the production shape matches
+  development (one origin, no CORS), the API stays unpublished, and both images
+  carry their own health check.
 
 Rationale and rejected alternatives: [docs/DECISIONS.md](docs/DECISIONS.md).
 
@@ -222,7 +275,11 @@ Rationale and rejected alternatives: [docs/DECISIONS.md](docs/DECISIONS.md).
 - Results are formatted with `String(value)`; extreme magnitudes use
   exponential notation.
 - No authentication, rate limiting, or persistence; none were requested.
-- Docker support was deliberately skipped (optional in the assignment).
+- Container images are built and run locally only: no registry push, no
+  orchestration, and the compose stack expects a Docker network for the
+  `backend` DNS name.
+- The frontend image carries nginx, so it is ~102 MB against the backend's
+  22.3 MB.
 - The operation list is duplicated in Go and TypeScript; keeping them in sync
   is manual.
 
@@ -236,8 +293,11 @@ Rationale and rejected alternatives: [docs/DECISIONS.md](docs/DECISIONS.md).
    <http://localhost:5173>.
 4. Press `1 0 + 5 =` (15), `√` on `25` in scientific mode (5), `1 ÷ 0 =` (shows
    the backend error message), `2 + 3 × 4 =` (20, left-to-right), then `C`.
-5. Run the curl examples above and compare with the documented responses.
-6. Check the edge cases in [docs/API.md](docs/API.md): unknown fields, trailing
+5. `make docker-up`, open <http://localhost:8081>, repeat step 4, then
+   `make docker-down`. Confirm `docker compose ps` shows both services healthy
+   and that the API answers at `http://localhost:8081/api/v1/calculate`.
+6. Run the curl examples above and compare with the documented responses.
+7. Check the edge cases in [docs/API.md](docs/API.md): unknown fields, trailing
    JSON, oversized body, unknown route, wrong method.
 
 ## Documentation

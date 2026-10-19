@@ -11,11 +11,11 @@ documentation. See [Problem.md](Problem.md) and [Prompt.md](Prompt.md).
 
 ## 2. Current overall status
 
-**All required milestones (M0–M5) are complete**, plus M6, a user-requested GUI
-revision that replaced the form with a classic keypad (Basic/Scientific modes).
-Backend, frontend, tests, coverage, smoke test, and documentation are done and
-verified. The repository is ready for evaluation and is local-only (no Git
-remote).
+**All required milestones (M0–M5) are complete**, plus M6 (a user-requested GUI
+revision that replaced the form with a classic keypad) and M7 (user-requested
+Docker packaging). Backend, frontend, tests, coverage, smoke test, Docker stack,
+and documentation are done and verified. The repository is ready for evaluation
+and is local-only (no Git remote).
 
 ## 3. Current milestone
 
@@ -36,6 +36,9 @@ None — project complete, pending user publication.
 - M6: Classic Calculator GUI — keypad with a key per operation, Basic/Scientific
   modes with an animated reveal, immediate-execution chaining, 36 tests, 99.31%
   statement / 100% branch coverage.
+- M7: Docker Packaging — multi-stage images (22.3 MB backend, 102 MB frontend),
+  nginx serving the SPA and proxying `/api/` + `/health`, Compose stack where
+  only the frontend is published (`8081:80`); both services verified healthy.
 
 ## 5. Current implementation state
 
@@ -45,8 +48,9 @@ None — project complete, pending user publication.
 | `backend/` | Complete for M1/M2: `cmd/server`, `internal/api`, `internal/calculator`, `internal/config`, tests. |
 | `frontend/` | Complete through M6: Vite + React + TS app, typed client, classic keypad UI with Basic/Scientific modes, 36 tests, `package-lock.json` committed. |
 | `docs/` | Problem.md, Prompt.md, and the eight required project documents present and current. |
-| `Makefile` | All documented targets exist and pass. |
+| `Makefile` | All documented targets exist and pass, including `docker-build` / `docker-up` / `docker-down`. |
 | `scripts/smoke.sh` | End-to-end smoke test (21 checks) against a real backend. |
+| `Docker` | `backend/Dockerfile`, `frontend/Dockerfile`, `frontend/nginx.conf`, `docker-compose.yml`; built and run, both services healthy. |
 
 ## 6. Architecture summary
 
@@ -68,6 +72,10 @@ Vite proxies `/api` to the backend in development. Details and diagram:
 | `frontend/src/components/Calculator.tsx` | Classic keypad UI: key definitions, immediate-execution state machine, mode toggle, display, error/loading states. |
 | `frontend/src/types/calculator.ts` | `Operation` union mirroring the Go operation constants (display metadata lives in the component). |
 | `frontend/vite.config.ts` | React plugin, `/api` dev proxy to `:8080`, Vitest jsdom + coverage config. |
+| `backend/Dockerfile` | Multi-stage: static Go binary on alpine, non-root (uid 10001), `/health` health check. |
+| `frontend/Dockerfile` | Multi-stage: `npm ci` + `npm run build` on node, static bundle on nginx. |
+| `frontend/nginx.conf` | Serves the SPA with a `try_files` fallback; proxies `/api/` and `/health` to `backend:8080` with Docker DNS re-resolution. |
+| `docker-compose.yml` | Backend (internal) + frontend (published `8081:80`), frontend waits for backend health. |
 | `docs/MILESTONES.md` | Milestone register with acceptance criteria and evidence. |
 | `docs/PROGRESS.md` | Authoritative checklist. |
 | `docs/API.md` | API contract. |
@@ -102,6 +110,14 @@ make run-frontend   # Vite dev server on :5173, proxies /api to :8080
 
 Run both in separate terminals; open `http://localhost:5173`.
 
+Containerized alternative (no Go/Node needed):
+
+```bash
+make docker-up      # docker compose up --build -d; app on http://localhost:8081
+docker compose ps   # both services healthy
+make docker-down
+```
+
 ## 11. Commands for testing and building
 
 ```bash
@@ -112,6 +128,9 @@ make build            # go build + frontend production build
 make coverage         # Go profile/summary + frontend coverage report
 make fmt-check        # gofmt + go vet + tsc --noEmit
 make smoke            # builds and starts the backend, runs 21 HTTP checks
+make docker-build     # build both images
+make docker-up        # start the stack on :8081
+make docker-down      # stop the stack
 cd backend && go test -race ./...
 ```
 
@@ -133,6 +152,19 @@ $ cd frontend && npm test                           # 2 files, 36 tests passed
 $ make fmt-check && make test && make build         # all OK
 $ make smoke                                        # 21 checks, 0 failed
 $ make coverage                                     # Go total 85.4%; frontend 99.31% statements
+```
+
+M7 Docker stack (2026-10-19):
+
+```text
+$ make docker-build                                 # calculator-backend:local 22.3 MB, calculator-frontend:local 102 MB
+$ make docker-up && docker compose ps                # backend Up (healthy), frontend Up (healthy) 0.0.0.0:8081->80/tcp
+$ curl http://localhost:8081/health                  # {"status":"ok"}
+$ curl -X POST http://localhost:8081/api/v1/calculate -d '{"operation":"add","a":10,"b":5}'
+{"result":15}
+$ curl ... divide 1/0                                # 400 DIVISION_BY_ZERO
+$ curl -o /dev/null -w '%{http_code}' http://localhost:8081/            # 200 text/html
+$ curl ... /some/unknown/route                       # 200 (SPA fallback)
 ```
 
 Details, per-package coverage, and the exact smoke cases:
@@ -169,7 +201,10 @@ percentage 25/200 → 200 `{"result":12.5}`, sqrt −1 → 400
 - Result formatting is `String(value)`; very large or very small magnitudes are
   shown in exponential notation.
 - No authentication, rate limiting, or persistence (not requested).
-- No Docker/Compose files (optional in the assignment; deliberately skipped).
+- No Docker/Compose registry push or orchestration; the stack is built and run
+  locally, and `nginx.conf` expects a Docker network for the `backend` DNS name.
+- The frontend image is ~102 MB because it carries nginx; the backend image is
+  22.3 MB.
 - The `handleCalculate` 500 branch for a non-`*calculator.Error` domain failure
   is defensive and cannot be triggered through the public API.
 - Operation identifiers are duplicated in Go and TypeScript; no automated
@@ -178,10 +213,10 @@ percentage 25/200 → 200 `{"result":12.5}`, sqrt −1 → 400
 
 ## 14. Outstanding tasks
 
-None for the required scope. Optional ideas: Docker support, a browser-level
-E2E test (which would also verify the reveal animation), a generated/shared
-operation contract, and backend operations for trig/log if a scientific
-calculator is wanted.
+None for the required scope. Optional ideas: a registry push / CI image build, a
+browser-level E2E test (which would also verify the reveal animation), a
+generated/shared operation contract, and backend operations for trig/log if a
+scientific calculator is wanted.
 
 ## 15. Blockers and their causes
 
@@ -211,6 +246,7 @@ Branch `main`, no remote. History:
 - `test: add integration smoke test and record coverage` (M4)
 - `docs: finalize project documentation and verification` (M5)
 - `feat: replace calculator form with keypad GUI` (M6)
+- `chore: add Docker packaging for the full stack` (M7)
 
 ## 18. Immediate next steps
 
@@ -234,9 +270,13 @@ Optional follow-ups are listed in section 14.
 - M6: classic keypad with immediate execution; scientific keys limited to
   existing backend operations; the reveal animation is CSS-only (ADR-011,
   ADR-012).
+- M7: Docker packaging with nginx as the single entry point; the API is not
+  published outside the compose network (ADR-013).
 
 ## 20. Decisions that still require approval
 
-- Configuring a Git remote or publishing the repository.
-- Any change to the agreed architecture (e.g. adding a framework, database, or
-  Docker infrastructure) beyond the documented scope.
+- Configuring a Git remote or publishing the repository (and, if wanted,
+  pushing container images to a registry).
+- Any change to the agreed architecture (e.g. adding a database, a framework, or
+  the trig/log operations the scientific keys do not cover) beyond the
+  documented scope.

@@ -106,6 +106,25 @@ only after its completion criterion has been verified.
       scope and animation) in `docs/DECISIONS.md`.
 - [x] Update README, ARCHITECTURE, TESTING, MILESTONES, HANDOFF, AI_PROMPTS.
 
+## M7: Docker packaging (user request)
+
+- [x] `backend/Dockerfile`: multi-stage, static binary (`CGO_ENABLED=0`,
+      `-trimpath -ldflags='-s -w'`), non-root user, `wget` health check.
+- [x] `frontend/Dockerfile`: `node:26-alpine` build (`npm ci`,
+      `npm run build`), static output copied into `nginx:alpine`.
+- [x] `frontend/nginx.conf`: SPA `try_files` fallback, `/api/` and `/health`
+      proxied to `backend:8080`, Docker DNS re-resolution.
+- [x] `docker-compose.yml`: frontend published on `8081:80` (or
+      `$FRONTEND_PORT`), backend internal, `depends_on: service_healthy`.
+- [x] `.dockerignore` for both build contexts (`node_modules`, `dist`,
+      coverage, binaries).
+- [x] Makefile targets `docker-build`, `docker-up`, `docker-down`.
+- [x] Verified: both images build, both containers healthy, SPA + proxied API +
+      `/health` + asset + deep-link requests all answer correctly from `:8081`.
+- [x] Verified the non-Docker workflow still passes (`make test`, `make smoke`).
+- [x] Record ADR-013 and mark ADR-010 superseded.
+- [x] Update README (Docker section), TESTING, MILESTONES, HANDOFF, AI_PROMPTS.
+
 ## Git hygiene
 
 - [x] Small, focused commits per milestone (seven commits: M0–M5 plus the M6 GUI

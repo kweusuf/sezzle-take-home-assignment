@@ -57,8 +57,27 @@ Coverage artifacts: `frontend/coverage/` (ignored by Git).
 | `make coverage` | Go coverage profile/summary + frontend coverage |
 | `make fmt-check` | `gofmt` check + TypeScript type check |
 | `make smoke` | Real backend + curl success/error checks |
+| `make docker-build` | Build both container images |
+| `make docker-up` | Build and start the stack on `:8081` (detached) |
+| `make docker-down` | Stop the stack and remove containers/networks |
 
 All targets exist and were executed on 2026-10-19; see "Observed results".
+
+## Docker
+
+| Task | Command |
+| --- | --- |
+| Build images | `docker compose build` (or `make docker-build`) |
+| Start the stack | `docker compose up --build -d` (or `make docker-up`) |
+| Status / health | `docker compose ps` |
+| Logs | `docker compose logs -f` |
+| Stop | `docker compose down` (or `make docker-down`) |
+| API through nginx | `curl http://localhost:8081/api/v1/calculate ...` |
+
+The frontend image is the only published port (`8081:80` by default,
+`FRONTEND_PORT` overrides it); the backend is reachable only inside the compose
+network as `backend:8080`. Health checks come from the images, so
+`docker compose ps` shows `(healthy)` for both services.
 
 ## Observed results
 
@@ -165,7 +184,6 @@ non-finite `result` (`1e309`), all mapped to `INVALID_RESPONSE`.
 ```bash
 ./scripts/smoke.sh            # or: make smoke
 ```
-
 The script builds the backend, starts it on `SMOKE_PORT` (default `8099`),
 waits for `/health`, then asserts 21 success and error paths over HTTP
 (operations, division by zero, negative square root, arity errors, unsupported
@@ -200,6 +218,40 @@ Observed coverage:
 The Vitest `text` reporter hides files at 100% coverage, which is why
 `src/api/client.ts` does not appear in the console table; it is present in
 `frontend/coverage/index.html` at 100%.
+
+### M7 — Docker stack (2026-10-19)
+
+```text
+$ make docker-build
+ Image calculator-backend:local  Built
+ Image calculator-frontend:local Built
+
+$ make docker-up && docker compose ps
+SERVICE    STATUS                  PORTS
+backend    Up (healthy)            8080/tcp
+frontend   Up (healthy)            0.0.0.0:8081->80/tcp, [::]:8081->80/tcp
+
+$ curl http://localhost:8081/health
+{"status":"ok"}
+$ curl -X POST http://localhost:8081/api/v1/calculate -d '{"operation":"add","a":10,"b":5}'
+{"result":15}
+$ curl -X POST ... '{"operation":"sqrt","a":25}'        # {"result":5}
+$ curl -X POST ... '{"operation":"divide","a":1,"b":0}'  # 400 {"error":{"code":"DIVISION_BY_ZERO",...}}
+$ curl -o /dev/null -w '%{http_code} %{content_type}' http://localhost:8081/
+200 text/html
+$ curl ... /assets/index-*.js                             # 200 application/javascript, 225281 bytes
+$ curl ... /some/unknown/route                            # 200 (SPA fallback)
+$ docker compose exec -T backend id
+uid=10001(app) gid=10001(app) groups=10001(app)
+```
+
+Image sizes: `calculator-backend:local` 22.3 MB, `calculator-frontend:local`
+102 MB. `docker history` on the frontend image shows the runtime layers are the
+nginx base (51.6 MB), `nginx.conf` (20.5 kB), and the built bundle (262 kB), so no
+`node_modules` leaks into the runtime image.
+
+After the Docker work, the local (non-Docker) checks were re-run unchanged:
+`make test` (Go ok, 36 frontend tests) and `make smoke` (21 checks, 0 failed).
 
 ## Final verification pass
 
@@ -236,8 +288,8 @@ Uncovered areas are deliberate: the unreachable final return in
 
 ## Environment limitations (current)
 
-- Docker is installed but Docker support is optional and is not planned for the
-  first pass.
+- Docker packaging is provided (M7) and verified; the compose stack is the only
+  deployment path documented (no registry push, no orchestration).
 - No browser-based end-to-end runner is installed; UI behavior is covered by
   jsdom-based React Testing Library tests, and the HTTP integration is covered
   by the smoke script (M4). The M6 reveal animation is CSS-only and was not

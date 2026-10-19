@@ -3,7 +3,8 @@ NPM ?= npm
 
 .PHONY: test test-backend test-frontend build build-backend build-frontend \
 	run-backend run-frontend coverage coverage-backend coverage-frontend \
-	fmt-check fmt-check-backend fmt-check-frontend smoke
+	fmt-check fmt-check-backend fmt-check-frontend smoke \
+	docker-build docker-up docker-down
 
 test: test-backend test-frontend
 
@@ -47,3 +48,13 @@ fmt-check-frontend:
 
 smoke:
 	./scripts/smoke.sh
+
+docker-build:
+	docker compose build
+
+# Frontend on http://localhost:8081 (override with FRONTEND_PORT).
+docker-up:
+	docker compose up --build -d
+
+docker-down:
+	docker compose down
