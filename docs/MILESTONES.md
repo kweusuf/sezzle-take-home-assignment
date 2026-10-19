@@ -39,10 +39,12 @@ A milestone is complete only when its acceptance criteria have been verified.
     unsupported operations, negative sqrt, and invalid arity rejected.
   - `gofmt` clean; `go test ./...` passes.
 - **Dependencies:** M0.
-- **Status:** NOT STARTED
-- **Verification commands:** `cd backend && gofmt -l . && go test ./...`
-- **Completion evidence:** pending.
-- **Commits:** pending.
+- **Status:** COMPLETE
+- **Verification commands:** `cd backend && gofmt -l . && go vet ./... && go test ./... -cover`
+- **Completion evidence:** `go test ./...` → `ok calculator-app/backend/internal/calculator 0.444s
+  coverage: 97.5% of statements`; `gofmt -l .` and `go vet ./...` produced no
+  output. 47 table-driven cases plus a finite-result invariant test.
+- **Commits:** `feat: implement calculator operations and unit tests`.
 
 ## M2: Backend REST API
 

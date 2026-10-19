@@ -16,13 +16,14 @@ only after its completion criterion has been verified.
 
 ## M1: Backend implementation and tests
 
-- [ ] Create Go module (`go 1.22`) and package layout.
-- [ ] Implement add, subtract, multiply, divide.
-- [ ] Implement power, sqrt, percentage.
-- [ ] Implement typed errors and operand/arity validation.
-- [ ] Reject non-finite inputs and results; reject negative sqrt.
-- [ ] Table-driven unit tests: normal, negative, zero, fractions, edge cases.
-- [ ] `gofmt -l` clean; `go vet` clean; `go test ./internal/calculator` passes.
+- [x] Create Go module (`go 1.22`) and package layout.
+- [x] Implement add, subtract, multiply, divide.
+- [x] Implement power, sqrt, percentage.
+- [x] Implement typed errors and operand/arity validation.
+- [x] Reject non-finite inputs and results; reject negative sqrt.
+- [x] Table-driven unit tests: normal, negative, zero, fractions, edge cases.
+- [x] `gofmt -l` clean; `go vet` clean; `go test ./internal/calculator` passes
+      (`ok`, 0.44s, statement coverage 97.5%).
 
 ## M2: API implementation and tests
 

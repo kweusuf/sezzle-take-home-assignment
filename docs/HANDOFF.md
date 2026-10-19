@@ -11,26 +11,28 @@ documentation. See [Problem.md](Problem.md) and [Prompt.md](Prompt.md).
 
 ## 2. Current overall status
 
-M0 complete. Application code does not exist yet. Toolchain inspected and
-recorded; design and project-management documents written; Git repository
-initialized locally with no remote.
+M1 complete: the Go calculator core (pure arithmetic, typed errors, unit tests)
+is implemented and verified. No HTTP layer yet, so the service is not runnable
+and the frontend does not exist. Git repository is local-only with no remote.
 
 ## 3. Current milestone
 
-M1: Backend Calculator Core (`NOT STARTED`).
+M2: Backend REST API (`NOT STARTED`).
 
 ## 4. Completed milestones
 
 - M0: Project Foundation — structure, docs, initial README, initial commit.
+- M1: Backend Calculator Core — `backend/internal/calculator`, 47 table-driven
+  cases + invariant test, 97.5% statement coverage.
 
 ## 5. Current implementation state
 
 | Area | State |
 | --- | --- |
-| Repository | Initialized on `main`, no remote, no commits before M0's commit. |
-| `backend/` | Not created. |
+| Repository | Initialized on `main`, no remote. |
+| `backend/` | `go.mod` + `internal/calculator` (pure operations, typed errors, tests). No `cmd/`, `internal/api`, or `internal/config` yet. |
 | `frontend/` | Not created. |
-| `docs/` | Problem.md, Prompt.md, and the eight required project documents present. |
+| `docs/` | Problem.md, Prompt.md, and the eight required project documents present and current. |
 | `Makefile`, `scripts/` | Not created. |
 
 ## 6. Architecture summary
@@ -45,6 +47,7 @@ Vite proxies `/api` to the backend in development. Details and diagram:
 | Path | Responsibility |
 | --- | --- |
 | `README.md` | Evaluator entry point; updated every commit. |
+| `backend/internal/calculator/calculator.go` | Arithmetic core: operations, typed `Error{Code,Message}`, arity and numeric rules. |
 | `docs/MILESTONES.md` | Milestone register with acceptance criteria and evidence. |
 | `docs/PROGRESS.md` | Authoritative checklist. |
 | `docs/API.md` | API contract. |
@@ -90,18 +93,30 @@ make smoke          # curl smoke test against a real backend
 
 ## 12. Most recent successful verification results
 
-M0 only: `git init` succeeded; `git status` clean after the foundation commit.
-No build, test, or coverage command has been run yet because no code exists.
+M1 (backend core):
+
+```text
+$ cd backend && gofmt -l .        # no output
+$ cd backend && go vet ./...      # no output
+$ cd backend && go test ./... -cover
+ok  calculator-app/backend/internal/calculator  0.444s  coverage: 97.5% of statements
+```
+
+47 table-driven subtests pass; `binary`'s unreachable final return is the only
+uncovered statement. No frontend, HTTP, or coverage-report command has been run
+yet.
 
 ## 13. Known defects and limitations
 
-- No implementation yet; every functional requirement is pending.
+- No HTTP layer yet; the backend is a library until M2.
+- Only floating-point arithmetic; binary artifacts (e.g. `0.1+0.2`) are
+  returned as-is.
 - Duplicate JSON keys cannot be detected with `encoding/json` (documented
   limitation, not a defect).
 
 ## 14. Outstanding tasks
 
-All of M1–M5. See [PROGRESS.md](PROGRESS.md) for the per-task checklist.
+M2–M5. See [PROGRESS.md](PROGRESS.md) for the per-task checklist.
 
 ## 15. Blockers and their causes
 
@@ -116,14 +131,18 @@ None.
 
 ## 17. Git branch and latest relevant commits
 
-Branch `main`, no remote. Latest: `chore: establish project structure and
-documentation` (M0).
+Branch `main`, no remote. History:
+
+- `chore: establish project structure and documentation` (M0)
+- `feat: implement calculator operations and unit tests` (M1)
 
 ## 18. Immediate next steps
 
-1. Create the Go module and `internal/calculator` package with typed errors.
-2. Write table-driven unit tests for all operations and edge cases.
-3. Run `gofmt`, `go vet`, `go test ./...`; then commit M1.
+1. Add `internal/config` (`PORT`, default 8080) and `cmd/server/main.go`.
+2. Implement `internal/api`: router, strict JSON decoding, the documented error
+   envelope and status codes, panic recovery, graceful shutdown.
+3. Write `httptest` coverage for success and failure paths, then run
+   `go vet`, `go test ./... `, `go build ./...` and commit M2.
 
 ## 19. Approval decisions already made
 

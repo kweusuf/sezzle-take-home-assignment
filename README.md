@@ -3,17 +3,25 @@
 A small full-stack calculator: a React + TypeScript single-page frontend and a
 Go REST API.
 
-> Status: **M0 (project foundation)**. Backend and frontend implementation is
-> planned but not yet present. See [docs/MILESTONES.md](docs/MILESTONES.md) and
+> Status: **M1 complete** — the Go calculator core is implemented and tested.
+> There is no HTTP server or frontend yet, so the application cannot be run
+> end to end. See [docs/MILESTONES.md](docs/MILESTONES.md) and
 > [docs/PROGRESS.md](docs/PROGRESS.md) for live status.
+
+## Implemented so far
+
+- Go calculator core (`backend/internal/calculator`): add, subtract, multiply,
+  divide, power, sqrt, percentage with typed errors for division by zero,
+  missing operands, unsupported operations, non-finite operands/results, and
+  negative square roots.
+- Unit tests: 47 table-driven cases plus a finite-result invariant test
+  (97.5% statement coverage).
 
 ## Planned features
 
-- Addition, subtraction, multiplication, division.
-- Exponentiation, square root, percentage.
-- Validated REST API with consistent JSON errors.
+- REST API: `POST /api/v1/calculate`, `GET /health`.
 - Responsive calculator UI with loading, error, and reset states.
-- Unit, HTTP, and frontend tests plus coverage reports.
+- HTTP, frontend, and smoke tests plus coverage reports.
 
 ## Technology stack
 
@@ -27,10 +35,12 @@ Go REST API.
 
 ```text
 .
-├── backend/          # Go REST API (planned)
-├── frontend/         # React SPA (planned)
-├── docs/             # Project management and technical docs
-├── Makefile          # Common tasks (planned)
+├── backend/
+│   ├── internal/calculator/   # arithmetic core + unit tests
+│   └── go.mod
+├── frontend/                  # React SPA (planned)
+├── docs/                      # Project management and technical docs
+├── Makefile                   # Common tasks (planned)
 └── README.md
 ```
 
@@ -42,8 +52,13 @@ Go REST API.
 
 ## Setup and run
 
-Implementation has not started yet, so there is nothing to run. Commands will
-be added to this README as each milestone completes.
+The backend is currently a library without an HTTP server, and the frontend
+does not exist yet, so there is nothing to run. Runnable commands are added to
+this README as each milestone completes. The core can be exercised with:
+
+```bash
+cd backend && go test ./...
+```
 
 ## Documentation
 
