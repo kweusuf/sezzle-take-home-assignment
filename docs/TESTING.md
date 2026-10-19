@@ -57,6 +57,47 @@ Coverage artifacts: `frontend/coverage/` (ignored by Git).
 | `make fmt-check` | `gofmt` check + TypeScript type check |
 | `make smoke` | Real backend + curl success/error checks |
 
+Backend targets and `fmt-check` exist today. Frontend, aggregate (`test`,
+`build`, `coverage`), and `smoke` targets arrive in M3/M4.
+
+## Observed results
+
+### M1 — backend core (2026-10-19)
+
+```text
+$ cd backend && gofmt -l .        # no output
+$ cd backend && go vet ./...      # no output
+$ cd backend && go test ./... -cover
+ok  calculator-app/backend/internal/calculator  0.444s  coverage: 97.5% of statements
+```
+
+Only uncovered statement: the unreachable final return in `binary`.
+
+### M2 — backend API (2026-10-19)
+
+```text
+$ cd backend && gofmt -l . && go vet ./...      # no output
+$ cd backend && go test ./... -cover
+ok  calculator-app/backend/internal/api         0.416s  coverage: 94.0% of statements
+ok  calculator-app/backend/internal/calculator  cached  coverage: 97.5% of statements
+ok  calculator-app/backend/internal/config      cached  coverage: 100.0% of statements
+$ cd backend && go build ./...                  # ok
+```
+
+Live curl check against `PORT=8099`:
+
+```text
+GET  /health                     -> 200 {"status":"ok"}
+POST /api/v1/calculate add       -> 200 {"result":15}
+POST /api/v1/calculate sqrt      -> 200 {"result":5}
+POST /api/v1/calculate divide1/0 -> 400 {"error":{"code":"DIVISION_BY_ZERO","message":"cannot divide by zero"}}
+GET  /api/v1/calculate           -> 405 {"error":{"code":"METHOD_NOT_ALLOWED","message":"use POST for this endpoint"}}
+GET  /nope                       -> 404 {"error":{"code":"NOT_FOUND","message":"unknown route"}}
+```
+
+`backend/cmd/server` shows 0.0% statement coverage: it is a thin entry point and
+is exercised by the smoke test rather than unit tests.
+
 ## Integration / smoke
 
 ```bash
@@ -69,8 +110,9 @@ shuts the server down on exit.
 
 ## Environment limitations (current)
 
-- Docker is installed but Docker support is optional and not planned for the
+- Docker is installed but Docker support is optional and is not planned for the
   first pass.
 - No browser-based end-to-end runner is installed; UI behavior is covered by
   jsdom-based React Testing Library tests, and the HTTP integration is covered
-  by the smoke script.
+  by the smoke script (M4).
+- `backend/cmd/server` is not unit tested; the smoke test covers it.

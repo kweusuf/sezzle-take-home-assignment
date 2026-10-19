@@ -27,15 +27,18 @@ only after its completion criterion has been verified.
 
 ## M2: API implementation and tests
 
-- [ ] Implement `POST /api/v1/calculate` with strict JSON decoding.
-- [ ] Implement `GET /health`.
-- [ ] Consistent JSON error envelope and status codes.
-- [ ] Reject trailing JSON, unknown fields, oversized bodies; limit 64 KiB.
-- [ ] 404 unknown routes and 405 wrong methods as JSON.
-- [ ] Panic recovery returns a 500 without internal details.
-- [ ] Port configurable via `PORT` (default 8080); graceful shutdown.
-- [ ] `httptest` suite covers success, malformed input, and failure paths.
-- [ ] `go build ./...` passes; server starts and responds to curl.
+- [x] Implement `POST /api/v1/calculate` with strict JSON decoding.
+- [x] Implement `GET /health`.
+- [x] Consistent JSON error envelope and status codes.
+- [x] Reject trailing JSON, unknown fields, oversized bodies; limit 64 KiB.
+- [x] 404 unknown routes and 405 wrong methods as JSON (with `Allow` header).
+- [x] Panic recovery returns a 500 without internal details.
+- [x] Port configurable via `PORT` (default 8080); graceful shutdown.
+- [x] `httptest` suite covers success, malformed input, and failure paths
+      (10 success cases, 26 error cases, body-limit, health, panic recovery).
+- [x] `go build ./...` passes; server started and checked with curl
+      (`PORT=8099`): `/health` 200, `add` 200 `{"result":15}`, `sqrt` 200,
+      divide-by-zero 400, GET on calculate 405, unknown route 404.
 
 ## M3: Frontend implementation and tests
 

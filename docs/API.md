@@ -1,8 +1,8 @@
 # API Contract
 
-Status: M0 planned contract. Implementation status is tracked in
-[MILESTONES.md](MILESTONES.md). This file will be updated with observed curl
-output after M2.
+Status: implemented and verified at M2. Error **codes** and status codes are
+contractual and covered by tests; error **messages** are human-readable and may
+be reworded without notice.
 
 Base URL (development): `http://localhost:8080`
 
@@ -49,6 +49,21 @@ Envelope:
 { "error": { "code": "DIVISION_BY_ZERO", "message": "Cannot divide by zero" } }
 ```
 
+Notable messages produced by the current implementation:
+
+| Situation | Message |
+| --- | --- |
+| Divide by zero | `cannot divide by zero` |
+| Percentage of zero | `cannot calculate a percentage of zero` |
+| Negative square root | `cannot take the square root of a negative number` |
+| Non-finite operand | `operand a must be a finite number` (or `b`) |
+| Missing `b` | `operation "add" requires operand b` |
+| Non-finite result | `operation "multiply" produced a non-finite result` |
+| Wrong method | `use POST for this endpoint` |
+| Unknown route | `unknown route` |
+| Oversized body | `request body exceeds 64 KiB` |
+| Panic | `internal server error` |
+
 | HTTP | Code | Meaning |
 | --- | --- | --- |
 | 400 | `INVALID_JSON` | Malformed JSON, wrong types, unknown fields, trailing values. |
@@ -89,11 +104,17 @@ curl -sS -X POST http://localhost:8080/api/v1/calculate \
 curl -sS -X POST http://localhost:8080/api/v1/calculate \
   -H 'Content-Type: application/json' \
   -d '{"operation":"divide","a":1,"b":0}'
-# {"error":{"code":"DIVISION_BY_ZERO","message":"Cannot divide by zero"}}
+# {"error":{"code":"DIVISION_BY_ZERO","message":"cannot divide by zero"}}
 
 curl -sS http://localhost:8080/health
 # {"status":"ok"}
 ```
+
+## Known decoding limitation
+
+`encoding/json` accepts duplicate object keys (the last value wins), so
+`{"a":1,"a":2}` is treated as `{"a":2}`. Detecting duplicates would require a
+custom decoder and is out of scope.
 
 ## Numerical behavior
 

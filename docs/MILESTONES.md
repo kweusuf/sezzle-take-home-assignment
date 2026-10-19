@@ -60,10 +60,15 @@ A milestone is complete only when its acceptance criteria have been verified.
   - Strict decoding (unknown fields, trailing JSON) and body limit enforced.
   - `httptest` suite passes; `go build ./...` passes.
 - **Dependencies:** M1.
-- **Status:** NOT STARTED
-- **Verification commands:** `cd backend && go vet ./... && go test ./... && go build ./...`
-- **Completion evidence:** pending.
-- **Commits:** pending.
+- **Status:** COMPLETE
+- **Verification commands:** `cd backend && gofmt -l . && go vet ./... && go test ./... -cover && go build ./...`
+- **Completion evidence:** `go test ./...` → `internal/api 94.0%`,
+  `internal/calculator 97.5%`, `internal/config 100.0%` of statements; `go vet`
+  and `gofmt -l` clean; live server on `PORT=8099` returned
+  `{"result":15}` for `add`, `{"error":{"code":"DIVISION_BY_ZERO",...}}` with
+  400 for divide-by-zero, 405 with `Allow: POST` for GET on the calculate
+  endpoint, 404 for unknown routes, and logged graceful shutdown on SIGTERM.
+- **Commits:** `feat: add calculator REST API and HTTP tests`.
 
 ## M3: React Frontend
 
